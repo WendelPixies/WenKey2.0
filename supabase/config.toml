@@ -1,0 +1,4 @@
+project_id = "tasaalobestljwraqjov"
+
+[functions.process-quarter-results]
+verify_jwt = true
