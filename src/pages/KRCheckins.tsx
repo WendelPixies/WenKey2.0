@@ -585,8 +585,8 @@ export default function KRCheckins() {
     const kr = currentKR;
 
     // Calcular percentual de atingimento:
-    // - aumento (maior È melhor): realizado / meta (limitado a 100%)
-    // - reduÁ„o (menor È melhor): meta / realizado (limitado a 100%; se realizado <= meta, conta 100%)
+    // - aumento (maior ÔøΩ melhor): realizado / meta (limitado a 100%)
+    // - reduÔøΩÔøΩo (menor ÔøΩ melhor): meta / realizado (limitado a 100%; se realizado <= meta, conta 100%)
     const percentualAtingido = calculateKR(
       isNaN(realizado) ? 0 : realizado,
       isNaN(minimo) ? null : minimo,
@@ -773,6 +773,10 @@ export default function KRCheckins() {
     target: number | null,
     direction: string | null
   ) => {
+    // Regra: Se n√£o atingir o M√≠nimo Or√ßamento (meta do checkin/piso), o KR √© 0.
+    if (min !== null && min !== undefined && (!direction || direction === 'increase' || direction === 'maior-√©-melhor')) {
+      if (realized < min) return 0;
+    }
     /**
      * Regra de atingimento:
      * - Para metas de aumento (increase/maior-√©-melhor): atingimento = realizado / meta
