@@ -773,29 +773,57 @@ export default function KRCheckins() {
     target: number | null,
     direction: string | null
   ) => {
-    // Regra: Se não atingir o Mínimo Orçamento (meta do checkin/piso), o KR é 0.
-    if (min !== null && min !== undefined && (!direction || direction === 'increase' || direction === 'maior-é-melhor')) {
-      if (realized < min) return 0;
-    }
-    /**
-     * Regra de atingimento:
-     * - Para metas de aumento (increase/maior-é-melhor): atingimento = realizado / meta
-     * - Para metas de redução (decrease/menor-é-melhor): atingimento = meta / realizado
-     * - Sempre limitado a 100% e nunca negativo.
-     */
-    const goal = target ?? min ?? 0;
-    if (goal <= 0 || realized === null || realized === undefined) return 0;
+    // Basic safety
+    if (target === null || target === undefined) return 0;
+    
+    const safeTarget = Number(target);
+    const safeRealized = Number(realized);
+    const safeMin = (min !== null && min !== undefined) ? Number(min) : null;
 
-    // Redução: quanto menor o realizado, melhor. Se já está abaixo ou igual à meta, conta 100%.
-    if (direction === 'decrease') {
-      if (realized <= goal) return 100;
-      return Math.min(100, Math.max(0, Math.round((goal / realized) * 100)));
+    // Logic for "Increase" / "Maior é melhor" (Default)
+    if (!direction || direction === 'increase' || direction === 'maior-é-melhor') {
+      
+      // If Minimum Budget (Piso) is defined
+      if (safeMin !== null) {
+         // Spreadsheet: IF(C20>=B20; 100% ...) -> Realized >= Target
+         if (safeRealized >= safeTarget) return 100;
+         
+         // Spreadsheet: IF(C20<F20; 0% ...) -> Realized < Min
+         if (safeRealized < safeMin) return 0;
+         
+         // Spreadsheet: ((F20-C20)/(F20-B20)) ??? 
+         // Wait, user image shows: ((Realizado - Min) / (Target - Min)) usually?
+         // User Formula Image: ((C20 - F20) / (B20 - F20)) ?? 
+         // Let's re-read the excel formula image user provided.
+         // Image says: IF(C20>=B20; 100%; IF(C20<F20; 0%; ((C20-F20)/(B20-F20))))
+         // Where C20 = Realizado, B20 = Meta, F20 = Min Orçamento.
+         // So: ((Realized - Min) / (Target - Min))
+         
+         const denominator = safeTarget - safeMin;
+         if (denominator === 0) return 0; // Avoid division by zero
+         
+         const result = ((safeRealized - safeMin) / denominator) * 100;
+         return Math.max(0, Math.min(100, result));
+      }
+
+      // Fallback if no Min is defined (Simple percentage)
+      if (safeTarget === 0) return 0;
+      const result = (safeRealized / safeTarget) * 100;
+      return Math.min(100, Math.max(0, result));
     }
 
-    // Aumento (default): quanto maior o realizado, melhor.
-    if (realized <= 0) return 0;
-    if (realized >= goal) return 100;
-    return Math.min(100, Math.max(0, Math.round((realized / goal) * 100)));
+    // Logic for "Decrease" (Menor é melhor)
+    if (direction === 'decrease' || direction === 'menor-é-melhor') {
+       if (safeRealized <= safeTarget) return 100;
+       
+       // Simple linear decay for now as no formula provided for decrease
+       if (safeTarget === 0) return 0; // Prevent div by zero
+       // Example: 200% - (Realized/Target)%
+       const result = ((2 * safeTarget - safeRealized) / safeTarget) * 100;
+       return Math.max(0, result);
+    }
+
+    return 0;
   };
 
   const updateStoredProgress = async (kr: KeyResult, newPercent: number) => {
