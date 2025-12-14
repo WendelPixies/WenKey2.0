@@ -99,7 +99,7 @@ export default function KRCheckins() {
   const [currentKR, setCurrentKR] = useState<KeyResult | null>(null);
   const [currentCheckin, setCurrentCheckin] = useState<QuarterCheckin | null>(null);
   const [formData, setFormData] = useState({ meta: '', minimo: '', realizado: '', observacoes: '' });
-  
+
   // Novos filtros
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filterCompanyId, setFilterCompanyId] = useState<string>('all');
@@ -116,7 +116,7 @@ export default function KRCheckins() {
     }
   }, [user, roleLoading]);
 
-  
+
 
   // Resetar data selecionada quando quarter mudar
   useEffect(() => {
@@ -316,8 +316,8 @@ export default function KRCheckins() {
       .eq('archived', false);
 
     // Aplica filtro de usuário conforme seleção/permissão
-    const selectedUserId = role === 'user' 
-      ? user.id 
+    const selectedUserId = role === 'user'
+      ? user.id
       : (filterOwnerId && filterOwnerId !== 'all' ? filterOwnerId : null);
     if (selectedUserId) {
       objectivesQuery = objectivesQuery.eq('user_id', selectedUserId);
@@ -345,7 +345,7 @@ export default function KRCheckins() {
 
     if (objData && objData.length > 0) {
       const objectiveIds = objData.map(o => o.id);
-      
+
       const { data: krData, error: krError } = await supabase
         .from('key_results')
         .select('*')
@@ -517,7 +517,7 @@ export default function KRCheckins() {
     setCurrentCheckin(checkin);
     const key = `${kr.id}-${checkin.id}`;
     const existing = checkinResults[key];
-    
+
     // Fetch the note from the database if it exists
     let note = existing?.note || '';
     if (!note && existing?.id) {
@@ -528,7 +528,7 @@ export default function KRCheckins() {
         .single();
       note = data?.note || '';
     }
-    
+
     setFormData({
       meta: existing?.meta_checkin != null ? formatInputValue(existing.meta_checkin.toString(), kr.type) : '',
       minimo: existing?.minimo_orcamento != null ? formatInputValue(existing.minimo_orcamento.toString(), kr.type) : '',
@@ -550,7 +550,7 @@ export default function KRCheckins() {
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     console.log('handleSaveCheckin iniciado');
     if (!currentKR || !currentCheckin) {
       console.log('currentKR ou currentCheckin não definidos', { currentKR, currentCheckin });
@@ -665,7 +665,7 @@ export default function KRCheckins() {
           note: formData.observacoes || null,
         };
         console.log('Criando novo registro:', insertData);
-        
+
         const { error, data } = await supabase
           .from('checkin_results')
           .insert(insertData)
@@ -681,7 +681,7 @@ export default function KRCheckins() {
       await updateStoredProgress(kr, roundedPercentual);
       // Recarregar os dados para refletir as mudanças
       await loadCheckinResults();
-      
+
       toast({
         title: 'Sucesso',
         description: 'Dados salvos com sucesso',
@@ -706,17 +706,17 @@ export default function KRCheckins() {
 
   const formatValue = (value: number | null, type: string | null, unit: string | null) => {
     if (value === null || value === undefined) return '--';
-    
+
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
     if (isNaN(numValue)) return '--';
-    
+
     switch (type) {
       case 'percentual':
       case 'percentage':
         return `${numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
       case 'moeda':
       case 'currency':
-        return numValue.toLocaleString('pt-BR', { 
+        return numValue.toLocaleString('pt-BR', {
           style: 'currency',
           currency: 'BRL',
           minimumFractionDigits: 2,
@@ -775,35 +775,35 @@ export default function KRCheckins() {
   ) => {
     // Basic safety
     if (target === null || target === undefined) return 0;
-    
+
     const safeTarget = Number(target);
     const safeRealized = Number(realized);
     const safeMin = (min !== null && min !== undefined) ? Number(min) : null;
 
     // Logic for "Increase" / "Maior é melhor" (Default)
     if (!direction || direction === 'increase' || direction === 'maior-é-melhor') {
-      
+
       // If Minimum Budget (Piso) is defined
       if (safeMin !== null) {
-         // Spreadsheet: IF(C20>=B20; 100% ...) -> Realized >= Target
-         if (safeRealized >= safeTarget) return 100;
-         
-         // Spreadsheet: IF(C20<F20; 0% ...) -> Realized < Min
-         if (safeRealized < safeMin) return 0;
-         
-         // Spreadsheet: ((F20-C20)/(F20-B20)) ??? 
-         // Wait, user image shows: ((Realizado - Min) / (Target - Min)) usually?
-         // User Formula Image: ((C20 - F20) / (B20 - F20)) ?? 
-         // Let's re-read the excel formula image user provided.
-         // Image says: IF(C20>=B20; 100%; IF(C20<F20; 0%; ((C20-F20)/(B20-F20))))
-         // Where C20 = Realizado, B20 = Meta, F20 = Min Orçamento.
-         // So: ((Realized - Min) / (Target - Min))
-         
-         const denominator = safeTarget - safeMin;
-         if (denominator === 0) return 0; // Avoid division by zero
-         
-         const result = ((safeRealized - safeMin) / denominator) * 100;
-         return Math.max(0, Math.min(100, result));
+        // Spreadsheet: IF(C20>=B20; 100% ...) -> Realized >= Target
+        if (safeRealized >= safeTarget) return 100;
+
+        // Spreadsheet: IF(C20<F20; 0% ...) -> Realized < Min
+        if (safeRealized < safeMin) return 0;
+
+        // Spreadsheet: ((F20-C20)/(F20-B20)) ??? 
+        // Wait, user image shows: ((Realizado - Min) / (Target - Min)) usually?
+        // User Formula Image: ((C20 - F20) / (B20 - F20)) ?? 
+        // Let's re-read the excel formula image user provided.
+        // Image says: IF(C20>=B20; 100%; IF(C20<F20; 0%; ((C20-F20)/(B20-F20))))
+        // Where C20 = Realizado, B20 = Meta, F20 = Min Orçamento.
+        // So: ((Realized - Min) / (Target - Min))
+
+        const denominator = safeTarget - safeMin;
+        if (denominator === 0) return 0; // Avoid division by zero
+
+        const result = ((safeRealized - safeMin) / denominator) * 100;
+        return Math.max(0, Math.min(100, result));
       }
 
       // Fallback if no Min is defined (Simple percentage)
@@ -814,13 +814,13 @@ export default function KRCheckins() {
 
     // Logic for "Decrease" (Menor é melhor)
     if (direction === 'decrease' || direction === 'menor-é-melhor') {
-       if (safeRealized <= safeTarget) return 100;
-       
-       // Simple linear decay for now as no formula provided for decrease
-       if (safeTarget === 0) return 0; // Prevent div by zero
-       // Example: 200% - (Realized/Target)%
-       const result = ((2 * safeTarget - safeRealized) / safeTarget) * 100;
-       return Math.max(0, result);
+      if (safeRealized <= safeTarget) return 100;
+
+      // Simple linear decay for now as no formula provided for decrease
+      if (safeTarget === 0) return 0; // Prevent div by zero
+      // Example: 200% - (Realized/Target)%
+      const result = ((2 * safeTarget - safeRealized) / safeTarget) * 100;
+      return Math.max(0, result);
     }
 
     return 0;
@@ -890,7 +890,7 @@ export default function KRCheckins() {
   const handleInputChange = (krId: string, checkinId: string, field: 'meta' | 'minimo' | 'realizado', value: string) => {
     const key = `${krId}-${checkinId}`;
     const current = editingData[key] || { meta: '', minimo: '', realizado: '' };
-    
+
     setEditingData({
       ...editingData,
       [key]: {
@@ -1218,8 +1218,8 @@ export default function KRCheckins() {
           {role === 'admin' && (
             <div>
               <Label htmlFor="company">Empresa</Label>
-              <Select 
-                value={filterCompanyId || 'all'} 
+              <Select
+                value={filterCompanyId || 'all'}
                 onValueChange={(value) => {
                   setFilterCompanyId(value);
                   setFilterOwnerId('all');
@@ -1263,8 +1263,8 @@ export default function KRCheckins() {
           {role === 'admin' && (
             <div>
               <Label htmlFor="user">Usuário</Label>
-              <Select 
-                value={filterOwnerId || 'all'} 
+              <Select
+                value={filterOwnerId || 'all'}
                 onValueChange={setFilterOwnerId}
                 disabled={!filterCompanyId || filterCompanyId === 'all'}
               >
@@ -1294,8 +1294,8 @@ export default function KRCheckins() {
                   <p className="text-sm font-medium text-muted-foreground mb-1">RESULTADO ATUAL</p>
                   <p className="text-4xl font-bold text-primary">{currentResult}%</p>
                 </div>
-                <Progress 
-                  value={currentResult} 
+                <Progress
+                  value={currentResult}
                   className="h-3 w-32"
                   style={{ '--progress-color': getProgressColor(currentResult) } as React.CSSProperties}
                 />
@@ -1318,13 +1318,12 @@ export default function KRCheckins() {
                         Key Result
                       </TableHead>
                       {quarterCheckins.map((checkin) => (
-                        <TableHead 
-                          key={checkin.id} 
-                          className={`text-center min-w-[140px] px-2 cursor-pointer transition-colors ${
-                            selectedCheckinDate === checkin.id 
-                              ? 'bg-primary/10 border-b-2 border-primary' 
-                              : 'hover:bg-muted/50'
-                          }`}
+                        <TableHead
+                          key={checkin.id}
+                          className={`text-center min-w-[200px] px-4 cursor-pointer transition-colors ${selectedCheckinDate === checkin.id
+                            ? 'bg-primary/10 border-b-2 border-primary'
+                            : 'hover:bg-muted/50'
+                            }`}
                           onClick={() => setSelectedCheckinDate(checkin.id)}
                         >
                           <div className={`font-bold ${selectedCheckinDate === checkin.id ? 'text-primary' : ''}`}>
@@ -1354,8 +1353,8 @@ export default function KRCheckins() {
                               <TableCell key={checkin.id} className="bg-muted/50 text-center px-2">
                                 <div className="flex flex-col items-center gap-1 py-2">
                                   <span className="text-xl font-bold text-primary">{avgPercentage}%</span>
-                                  <Progress 
-                                    value={avgPercentage} 
+                                  <Progress
+                                    value={avgPercentage}
                                     className="h-2 w-20"
                                     style={{ '--progress-color': getProgressColor(avgPercentage) } as React.CSSProperties}
                                   />
@@ -1382,9 +1381,9 @@ export default function KRCheckins() {
                               const result = checkinResults[key];
 
                               return (
-                                <TableCell 
-                                  key={checkin.id} 
-                                  className="p-2 cursor-pointer hover:bg-muted/50 min-w-[140px]"
+                                <TableCell
+                                  key={checkin.id}
+                                  className="p-4 cursor-pointer hover:bg-muted/50 min-w-[200px]"
                                   onClick={() => openDialog(kr, checkin)}
                                 >
                                   {result ? (
@@ -1393,7 +1392,7 @@ export default function KRCheckins() {
                                         <p className="text-xs text-muted-foreground">META:</p>
                                         <p className="font-medium">{formatValue(result.meta_checkin, kr.type, kr.unit)}</p>
                                       </div>
-                                      
+
                                       <div>
                                         <p className="text-xs text-muted-foreground">MIN. ORÇAM:</p>
                                         <p className="font-medium">{formatValue(result.minimo_orcamento, kr.type, kr.unit)}</p>
@@ -1412,13 +1411,13 @@ export default function KRCheckins() {
                                             </div>
                                           </div>
                                           <div className="space-y-1">
-                                            <Progress 
+                                            <Progress
                                               value={calculateKR(
                                                 result.valor_realizado,
                                                 result.minimo_orcamento,
                                                 result.meta_checkin,
                                                 kr.direction
-                                              )} 
+                                              )}
                                               className="h-2"
                                               style={{
                                                 ['--progress-color' as any]: getProgressColor(calculateKR(
@@ -1461,7 +1460,7 @@ export default function KRCheckins() {
         {selectedQuarter && (objectives.length === 0 || quarterCheckins.length === 0) && (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              {quarterCheckins.length === 0 
+              {quarterCheckins.length === 0
                 ? 'Nenhum check-in cadastrado para este trimestre'
                 : 'Nenhum objetivo cadastrado para este trimestre'}
             </CardContent>
@@ -1473,7 +1472,7 @@ export default function KRCheckins() {
             closeDialog();
           }
         }}>
-          <DialogContent 
+          <DialogContent
             className="max-w-lg max-h-[85vh] overflow-y-auto"
             onInteractOutside={(e) => e.preventDefault()}
           >
@@ -1586,13 +1585,13 @@ export default function KRCheckins() {
                           )}
                         </div>
                       </div>
-                      <Progress 
+                      <Progress
                         value={formData.realizado ? calculateKR(
                           parseFloat(parseInputValue(formData.realizado)) || 0,
                           parseFloat(parseInputValue(formData.minimo)) || 0,
                           parseFloat(parseInputValue(formData.meta)) || 0,
                           currentKR.direction
-                        ) : 0} 
+                        ) : 0}
                         className="h-3"
                         style={{
                           ['--progress-color' as any]: getProgressColor(formData.realizado ? calculateKR(
@@ -1609,8 +1608,8 @@ export default function KRCheckins() {
                           currentKR.type === 'moeda' || currentKR.type === 'currency'
                             ? 'Ex: R$ 1.000,00'
                             : currentKR.type === 'percentual' || currentKR.type === 'percentage'
-                            ? 'Ex: 75%'
-                            : 'Ex: 1000'
+                              ? 'Ex: 75%'
+                              : 'Ex: 1000'
                         }
                         value={formData.realizado}
                         onChange={(e) => {
@@ -1650,25 +1649,25 @@ export default function KRCheckins() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
+                  <Button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       handleSaveCheckin(e);
-                    }} 
+                    }}
                     className="flex-1"
                   >
                     Salvar
                   </Button>
-                  <Button 
+                  <Button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       closeDialog();
-                    }} 
-                    variant="outline" 
+                    }}
+                    variant="outline"
                     className="flex-1"
                   >
                     Cancelar
