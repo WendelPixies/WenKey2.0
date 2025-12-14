@@ -231,7 +231,6 @@ export function AddKRDialog({ objectiveId, companyId, quarterId, onSuccess }: Ad
                           <SelectContent className="bg-popover z-50">
                             <SelectItem value="increase">Aumentar</SelectItem>
                             <SelectItem value="decrease">Diminuir</SelectItem>
-                            <SelectItem value="maintain">Manter</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

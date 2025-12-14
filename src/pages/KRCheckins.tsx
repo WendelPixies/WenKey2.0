@@ -1407,7 +1407,7 @@ export default function KRCheckins() {
                                               <div className="font-bold">{formatValue(result.valor_realizado, kr.type, kr.unit)}</div>
                                               <div className="text-[10px] font-semibold text-[#0d3a8c]">
                                                 <span>Atingimento:</span>
-                                                <span className="ml-1">{calculateAttainment(result.valor_realizado, result.meta_checkin, kr.direction)}%</span>
+                                                <span className="ml-1">{calculateAttainment(result.valor_realizado, result.meta_checkin, kr.direction).toFixed(2)}%</span>
                                               </div>
                                             </div>
                                           </div>
@@ -1432,12 +1432,7 @@ export default function KRCheckins() {
                                             <div className="flex justify-between items-center text-[10px]">
                                               <span className="text-muted-foreground">KR:</span>
                                               <span className="font-semibold text-primary text-sm">
-                                                {calculateKR(
-                                                  result.valor_realizado,
-                                                  result.minimo_orcamento,
-                                                  result.meta_checkin,
-                                                  kr.direction
-                                                )}%
+                                                {calculateKR(result.valor_realizado, result.minimo_orcamento, result.meta_checkin, kr.direction).toFixed(2)}%
                                               </span>
                                             </div>
                                           </div>
@@ -1577,7 +1572,7 @@ export default function KRCheckins() {
                             <div className="text-sm space-y-1">
                               <div className="font-semibold text-[#0d3a8c]">
                                 <span>Atingimento:</span>
-                                <span className="ml-1">{calculateAttainment(parseFloat(parseInputValue(formData.realizado)) || 0, parseFloat(parseInputValue(formData.meta)) || 0, currentKR.direction)}%</span>
+                                <span className="ml-1">{calculateAttainment(parseFloat(parseInputValue(formData.realizado)) || 0, parseFloat(parseInputValue(formData.meta)) || 0, currentKR.direction).toFixed(2)}%</span>
                               </div>
                               <div className="font-semibold text-primary text-sm">
                                 KR: {calculateKR(
@@ -1585,7 +1580,7 @@ export default function KRCheckins() {
                                   parseFloat(parseInputValue(formData.minimo)) || 0,
                                   parseFloat(parseInputValue(formData.meta)) || 0,
                                   currentKR.direction
-                                )}%
+                                ).toFixed(2)}%
                               </div>
                             </div>
                           )}
