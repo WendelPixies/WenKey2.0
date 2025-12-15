@@ -785,20 +785,13 @@ export default function KRCheckins() {
 
       // If Minimum Budget (Piso) is defined
       if (safeMin !== null) {
-        // Spreadsheet: IF(C20>=B20; 100% ...) -> Realized >= Target
+        // Realized >= Target -> 100%
         if (safeRealized >= safeTarget) return 100;
 
-        // Spreadsheet: IF(C20<F20; 0% ...) -> Realized < Min
+        // Realized < Min -> 0%
         if (safeRealized < safeMin) return 0;
 
-        // Spreadsheet: ((F20-C20)/(F20-B20)) ??? 
-        // Wait, user image shows: ((Realizado - Min) / (Target - Min)) usually?
-        // User Formula Image: ((C20 - F20) / (B20 - F20)) ?? 
-        // Let's re-read the excel formula image user provided.
-        // Image says: IF(C20>=B20; 100%; IF(C20<F20; 0%; ((C20-F20)/(B20-F20))))
-        // Where C20 = Realizado, B20 = Meta, F20 = Min Orçamento.
-        // So: ((Realized - Min) / (Target - Min))
-
+        // Formula: ((Realized - Min) / (Target - Min)) * 100
         const denominator = safeTarget - safeMin;
         if (denominator === 0) return 0; // Avoid division by zero
 
@@ -949,7 +942,8 @@ export default function KRCheckins() {
   }, [objectives, keyResults]);
 
   const calculateGroupAverage = useCallback((groupKRs: KeyResult[], checkinId: string) => {
-    let total = 0;
+    let weightedSum = 0;
+    let totalWeight = 0;
     let count = 0;
 
     groupKRs.forEach((kr) => {
@@ -968,13 +962,16 @@ export default function KRCheckins() {
           result.meta_checkin,
           kr.direction
         );
-        total += krPercentage;
+
+        const weight = typeof kr.weight === 'number' && !Number.isNaN(kr.weight) ? kr.weight : 1;
+        weightedSum += krPercentage * weight;
+        totalWeight += weight;
         count++;
       }
     });
 
     return {
-      average: count > 0 ? Math.round(total / count) : 0,
+      average: totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0,
       hasData: count > 0,
     };
   }, [checkinResults]);
