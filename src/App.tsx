@@ -14,16 +14,17 @@ import Objectives from "./pages/Objectives";
 import KRCheckins from "./pages/KRCheckins";
 import Profile from "./pages/Profile";
 import Overview from "./pages/Overview";
+import PerformanceHistory from "./pages/PerformanceHistory";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import ConfirmEmail from "./pages/ConfirmEmail";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   if (!user) return <Navigate to="/auth" replace />;
-  
+
   return <>{children}</>;
 }
 
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/objectives" element={<ProtectedRoute><Objectives /></ProtectedRoute>} />
               <Route path="/kr-checkins" element={<ProtectedRoute><KRCheckins /></ProtectedRoute>} />
               <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
+              <Route path="/performance-history" element={<ProtectedRoute><PerformanceHistory /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
