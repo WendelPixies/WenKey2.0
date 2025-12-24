@@ -41,7 +41,7 @@ export default function Auth() {
 
       if (error) throw error;
 
-      toast.success('Conta criada! Confirme seu email para continuar.');
+      toast.success('Conta criada! Confirme seu email. Após a confirmação, um administrador precisará ativar sua conta.');
       navigate(`/confirm-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
@@ -272,9 +272,9 @@ export default function Auth() {
 
       {/* Coluna direita: imagem de escritório com overlay azul */}
       <div className="relative hidden md:block overflow-hidden">
-        <img 
-          src="/images/office.jpg" 
-          alt="Escritório moderno" 
+        <img
+          src="/images/office.jpg"
+          alt="Escritório moderno"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-primary opacity-15" />

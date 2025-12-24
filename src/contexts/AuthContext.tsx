@@ -3,26 +3,116 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
+interface Profile {
+  id: string;
+  full_name: string;
+  email: string;
+  is_active: boolean;
+  permission_type: 'user' | 'manager' | 'admin';
+  company_id: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      // Tentamos buscar as colunas que temos certeza que existem
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, is_active, company_id')
+        .eq('id', userId)
+        .maybeSingle(); // Usamos maybeSingle para evitar erro se não houver perfil
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setProfile(null);
+        return;
+      }
+
+      if (data) {
+        // Buscamos o permission_type separadamente ou assumimos 'user' se falhar
+        // Isso evita que o erro de coluna inexistente quebre o carregamento principal
+        const { data: roleData } = await supabase
+          .from('profiles')
+          .select('permission_type' as any)
+          .eq('id', userId)
+          .maybeSingle();
+
+        setProfile({
+          ...data,
+          permission_type: (roleData as any)?.permission_type || 'user'
+        } as Profile);
+      } else {
+        setProfile(null);
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err);
+      setProfile(null);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          await fetchProfile(currentUser.id);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        setSession(session);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          await fetchProfile(currentUser.id);
+        } else {
+          setProfile(null);
+        }
+
         setLoading(false);
 
         if (event === 'PASSWORD_RECOVERY') {
@@ -31,22 +121,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setProfile(null);
     navigate('/auth');
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

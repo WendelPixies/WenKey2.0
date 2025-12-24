@@ -17,7 +17,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Eye,
-  History
+  History,
+  Beaker
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CompanySelector } from './CompanySelector';
@@ -76,6 +77,7 @@ export function Layout({ children }: LayoutProps) {
     { icon: TrendingUp, label: 'Check-ins KR', path: '/kr-checkins' },
     { icon: History, label: 'Histórico', path: '/performance-history' },
     { icon: Eye, label: 'Visão Geral', path: '/overview', adminOnly: true },
+    { icon: Beaker, label: 'Laboratório', path: '/prototypes', adminOnly: true },
   ];
 
   // Filter navigation items based on role

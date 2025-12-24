@@ -82,6 +82,7 @@ export default function Users() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [filterCompanyId, setFilterCompanyId] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'pending'>('all');
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -395,8 +396,13 @@ export default function Users() {
   };
 
   const filteredUsers = users.filter(user => {
-    if (filterCompanyId === 'all') return true;
-    return user.company_id === filterCompanyId;
+    const matchesCompany = filterCompanyId === 'all' || user.company_id === filterCompanyId;
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'active' && user.is_active) ||
+      (filterStatus === 'pending' && !user.is_active);
+
+    return matchesCompany && matchesStatus;
   });
 
   return (
@@ -417,20 +423,34 @@ export default function Users() {
             <div className="flex justify-between items-center">
               <CardTitle>Lista de Usuários</CardTitle>
               {isAdmin && (
-                <div className="w-64">
-                  <Select value={filterCompanyId} onValueChange={setFilterCompanyId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filtrar por empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as empresas</SelectItem>
-                      {companies.filter(c => c.id).map(company => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-4 w-full max-w-2xl">
+                  <div className="flex-1">
+                    <Select value={filterCompanyId} onValueChange={setFilterCompanyId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filtrar por empresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as empresas</SelectItem>
+                        {companies.filter(c => c.id).map(company => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filtrar por status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
+                        <SelectItem value="active">Ativos</SelectItem>
+                        <SelectItem value="pending">Pendentes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
             </div>
@@ -475,10 +495,14 @@ export default function Users() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="p-0 h-auto hover:bg-transparent"
                           onClick={() => toggleUserStatus(user.id, user.is_active)}
                         >
-                          <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                            {user.is_active ? 'Ativo' : 'Inativo'}
+                          <Badge
+                            variant={user.is_active ? 'default' : 'secondary'}
+                            className={!user.is_active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200' : ''}
+                          >
+                            {user.is_active ? 'Ativo' : 'Pendente'}
                           </Badge>
                         </Button>
                       </TableCell>

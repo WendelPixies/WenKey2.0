@@ -22,7 +22,13 @@ import { Trophy, TrendingUp } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
+
+interface Company {
+    id: string;
+    name: string;
+}
 
 interface Quarter {
     id: string;
@@ -49,6 +55,7 @@ interface QuarterResult {
 
 export default function PerformanceHistory() {
     const { selectedCompanyId } = useCompany();
+    const { isAdmin } = useUserRole();
     const [loading, setLoading] = useState(true);
     const [activeUsersOnly, setActiveUsersOnly] = useState(true);
 
@@ -57,11 +64,46 @@ export default function PerformanceHistory() {
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [results, setResults] = useState<QuarterResult[]>([]);
 
+    // Admin Filter State
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [filterCompanyId, setFilterCompanyId] = useState<string>("");
+
     useEffect(() => {
         if (selectedCompanyId) {
-            loadData();
+            setFilterCompanyId(selectedCompanyId);
         }
     }, [selectedCompanyId]);
+
+    useEffect(() => {
+        if (filterCompanyId) {
+            loadData();
+        }
+    }, [filterCompanyId]);
+
+    useEffect(() => {
+        if (isAdmin) {
+            loadCompanies();
+        }
+    }, [isAdmin]);
+
+    const loadCompanies = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('companies')
+                .select('id, name')
+                .order('name');
+
+            if (error) throw error;
+            setCompanies(data || []);
+        } catch (error) {
+            console.error('Error loading companies:', error);
+        }
+    };
+
+    useEffect(() => {
+        // Remove direct dependency on selectedCompanyId for loadData
+        // because we want to update filterCompanyId first
+    }, []);
 
     const loadData = async () => {
         try {
@@ -71,7 +113,7 @@ export default function PerformanceHistory() {
             const { data: quartersData, error: quartersError } = await supabase
                 .from('quarters')
                 .select('*')
-                .eq('company_id', selectedCompanyId)
+                .eq('company_id', filterCompanyId)
                 .order('start_date', { ascending: true });
 
             if (quartersError) throw quartersError;
@@ -81,7 +123,7 @@ export default function PerformanceHistory() {
             const { data: usersData, error: usersError } = await supabase
                 .from('profiles')
                 .select('id, full_name, avatar_url, sector, is_active, company_id')
-                .eq('company_id', selectedCompanyId)
+                .eq('company_id', filterCompanyId)
                 .order('full_name');
 
             if (usersError) throw usersError;
@@ -91,7 +133,7 @@ export default function PerformanceHistory() {
             const { data: resultsData, error: resultsError } = await supabase
                 .from('quarter_results')
                 .select('quarter_id, user_id, result_percent')
-                .eq('company_id', selectedCompanyId);
+                .eq('company_id', filterCompanyId);
 
             if (resultsError) throw resultsError;
             setResults(resultsData || []);
@@ -143,7 +185,9 @@ export default function PerformanceHistory() {
         return users;
     }, [users, activeUsersOnly]);
 
-    if (!selectedCompanyId) {
+    const effectiveCompanyId = isAdmin ? filterCompanyId : selectedCompanyId;
+
+    if (!effectiveCompanyId) {
         return (
             <Layout>
                 <div className="flex h-[50vh] items-center justify-center text-muted-foreground">
@@ -168,6 +212,23 @@ export default function PerformanceHistory() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {isAdmin && (
+                            <Select
+                                value={filterCompanyId}
+                                onValueChange={setFilterCompanyId}
+                            >
+                                <SelectTrigger className="w-[240px]">
+                                    <SelectValue placeholder="Selecione a Empresa" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {companies.map((company) => (
+                                        <SelectItem key={company.id} value={company.id}>
+                                            {company.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                         <Select
                             value={activeUsersOnly ? "active" : "all"}
                             onValueChange={(v) => setActiveUsersOnly(v === "active")}

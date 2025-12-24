@@ -64,7 +64,7 @@ export default function Quarters() {
   const [expandedQuarters, setExpandedQuarters] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [selectedCompanyForForm, setSelectedCompanyForForm] = useState<string>('');
-  
+
   // Quarter dialog states
   const [quarterDialogOpen, setQuarterDialogOpen] = useState(false);
   const [editingQuarter, setEditingQuarter] = useState<Quarter | null>(null);
@@ -73,7 +73,7 @@ export default function Quarters() {
     start_date: undefined,
     end_date: undefined,
   });
-  
+
   // Check-in dialog states
   const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter | null>(null);
@@ -82,7 +82,7 @@ export default function Quarters() {
     occurred_at: undefined,
     note: '',
   });
-  
+
   // Delete dialogs
   const [deleteQuarterDialog, setDeleteQuarterDialog] = useState<Quarter | null>(null);
   const [deleteCheckInDialog, setDeleteCheckInDialog] = useState<CheckIn | null>(null);
@@ -126,7 +126,7 @@ export default function Quarters() {
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
     try {
       const { data: quartersData, error: quartersError } = await supabase
@@ -288,7 +288,7 @@ export default function Quarters() {
     // Parse date strings correctly to avoid timezone issues
     const startParts = quarter.start_date.split('-').map(Number);
     const endParts = quarter.end_date.split('-').map(Number);
-    
+
     setQuarterFormData({
       name: quarter.name,
       start_date: new Date(startParts[0], startParts[1] - 1, startParts[2]),
@@ -304,6 +304,34 @@ export default function Quarters() {
       end_date: undefined,
     });
     setEditingQuarter(null);
+  };
+
+  const handleScheduleGoogle = async (quarter: Quarter) => {
+    try {
+      toast({
+        title: 'Iniciando agendamento...',
+        description: 'Processando convites para o Google Calendar.',
+      });
+
+      const { data, error } = await supabase.functions.invoke('schedule-checkins', {
+        body: { quarter_id: quarter.id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: data.success ? 'Sucesso' : 'Aviso',
+        description: data.message,
+        variant: data.success ? 'default' : 'destructive',
+      });
+
+    } catch (error: any) {
+      toast({
+        title: 'Erro no agendamento',
+        description: error.message || 'Erro ao comunicar com o servidor.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Check-in functions
@@ -426,7 +454,7 @@ export default function Quarters() {
     const dateStr = checkIn.checkin_date || checkIn.occurred_at;
     const dateParts = dateStr ? dateStr.split('-').map(Number) : null;
     const parsedDate = dateParts ? new Date(dateParts[0], dateParts[1] - 1, dateParts[2]) : new Date();
-    
+
     setCheckInFormData({
       occurred_at: parsedDate,
       note: checkIn.note || '',
@@ -476,86 +504,86 @@ export default function Quarters() {
                     Novo Quarter
                   </Button>
                 </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingQuarter ? 'Editar Quarter' : 'Novo Quarter'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Nome do Quarter *</Label>
-                    <Input
-                      id="name"
-                      value={quarterFormData.name}
-                      onChange={(e) => setQuarterFormData({ ...quarterFormData, name: e.target.value })}
-                      placeholder="Q1 - 2026"
-                    />
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingQuarter ? 'Editar Quarter' : 'Novo Quarter'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Nome do Quarter *</Label>
+                      <Input
+                        id="name"
+                        value={quarterFormData.name}
+                        onChange={(e) => setQuarterFormData({ ...quarterFormData, name: e.target.value })}
+                        placeholder="Q1 - 2026"
+                      />
+                    </div>
+                    <div>
+                      <Label>Data de Início *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !quarterFormData.start_date && 'text-muted-foreground'
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {quarterFormData.start_date ? format(quarterFormData.start_date, 'dd/MM/yyyy') : 'Selecione uma data'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={quarterFormData.start_date}
+                            onSelect={(date) => setQuarterFormData({ ...quarterFormData, start_date: date })}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div>
+                      <Label>Data de Fim *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !quarterFormData.end_date && 'text-muted-foreground'
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {quarterFormData.end_date ? format(quarterFormData.end_date, 'dd/MM/yyyy') : 'Selecione uma data'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={quarterFormData.end_date}
+                            onSelect={(date) => setQuarterFormData({ ...quarterFormData, end_date: date })}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
-                  <div>
-                    <Label>Data de Início *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !quarterFormData.start_date && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {quarterFormData.start_date ? format(quarterFormData.start_date, 'dd/MM/yyyy') : 'Selecione uma data'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={quarterFormData.start_date}
-                          onSelect={(date) => setQuarterFormData({ ...quarterFormData, start_date: date })}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <Label>Data de Fim *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !quarterFormData.end_date && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {quarterFormData.end_date ? format(quarterFormData.end_date, 'dd/MM/yyyy') : 'Selecione uma data'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={quarterFormData.end_date}
-                          onSelect={(date) => setQuarterFormData({ ...quarterFormData, end_date: date })}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => {
-                    setQuarterDialogOpen(false);
-                    resetQuarterForm();
-                  }}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={editingQuarter ? handleEditQuarter : handleCreateQuarter}>
-                    {editingQuarter ? 'Atualizar' : 'Salvar Quarter'}
-                  </Button>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => {
+                      setQuarterDialogOpen(false);
+                      resetQuarterForm();
+                    }}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={editingQuarter ? handleEditQuarter : handleCreateQuarter}>
+                      {editingQuarter ? 'Atualizar' : 'Salvar Quarter'}
+                    </Button>
                   </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>
@@ -616,6 +644,17 @@ export default function Quarters() {
                     </div>
                     {isAdmin && (
                       <div className="flex gap-2">
+                        {/* 
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleScheduleGoogle(quarter)}
+                          title="Agendar Check-ins no Google Calendar"
+                        >
+                          <CalendarIcon className="w-4 h-4 mr-2" />
+                          Agendar
+                        </Button> 
+                        */}
                         <Button
                           variant="outline"
                           size="sm"
@@ -766,7 +805,7 @@ export default function Quarters() {
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir Quarter</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir o quarter "{deleteQuarterDialog?.name}"? 
+                Tem certeza que deseja excluir o quarter "{deleteQuarterDialog?.name}"?
                 Todos os check-ins associados também serão excluídos. Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
