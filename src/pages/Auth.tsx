@@ -277,11 +277,11 @@ export default function Auth() {
           alt="Escritório moderno"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-primary opacity-15" />
+        <div className="absolute inset-0 bg-slate-900/40" />
         <div className="absolute inset-0 flex items-center justify-center p-10">
-          <div className="max-w-md text-center text-white relative z-10">
-            <h2 className="text-4xl font-bold mb-4 drop-shadow-lg">Bem-vindo ao Wenkey</h2>
-            <p className="text-lg drop-shadow-lg">Acompanhe metas, quarters e resultados em uma plataforma simples e poderosa.</p>
+          <div className="max-w-md text-center text-white relative z-10 p-8 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+            <h2 className="text-4xl font-bold mb-4 tracking-tight drop-shadow-2xl">Bem-vindo ao Wenkey</h2>
+            <p className="text-lg text-white/90 font-medium leading-relaxed">Acompanhe metas, quarters e resultados em uma plataforma simples e poderosa.</p>
           </div>
         </div>
       </div>
