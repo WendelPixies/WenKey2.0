@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+npm run devimport { useEffect, useState } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +19,7 @@ export function CompanySelector() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || roleLoading) return;
 
     let mounted = true;
     const fetchCompanies = async () => {
@@ -28,21 +28,39 @@ export function CompanySelector() {
           console.warn('CompanySelector: fetchCompanies timed out');
           setLoading(false);
         }
-      }, 3000);
+      }, 5000);
 
       try {
-        const { data, error } = await supabase
-          .from('company_members')
-          .select('company_id, companies(id, name)')
-          .eq('user_id', user.id);
+        let companyList: Company[] = [];
 
-        if (error) throw error;
+        if (role === 'admin') {
+          // Admin can see all active companies
+          const { data, error } = await supabase
+            .from('companies')
+            .select('id, name')
+            .eq('is_active', true)
+            .order('name');
 
-        if (mounted) {
-          const companyList = data
+          if (error) throw error;
+          companyList = data || [];
+        } else {
+          // Normal users only see companies they are members of
+          const { data, error } = await supabase
+            .from('company_members')
+            .select('company_id, companies(id, name)')
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+
+          companyList = data
             .map((item: any) => item.companies)
             .filter(Boolean) as Company[];
 
+          // Sort by name
+          companyList.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        if (mounted) {
           setCompanies(companyList);
 
           const hasCurrentCompany = companyList.some(
@@ -69,7 +87,7 @@ export function CompanySelector() {
     return () => {
       mounted = false;
     };
-  }, [user, selectedCompanyId, setSelectedCompanyId]);
+  }, [user, role, roleLoading, selectedCompanyId, setSelectedCompanyId]);
 
   const selectedCompany = companies.find((company) => company.id === selectedCompanyId);
   const isAdmin = role === 'admin';
