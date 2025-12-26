@@ -1311,7 +1311,7 @@ export default function KRCheckins() {
                       <TableHead className="w-[60px] sticky left-0 bg-background z-10 text-primary font-semibold px-2">
                         Código
                       </TableHead>
-                      <TableHead className="w-[250px] sticky left-[60px] bg-background z-10 px-3">
+                      <TableHead className="w-[200px] sticky left-[60px] bg-background z-10 px-3">
                         Key Result
                       </TableHead>
                       {quarterCheckins.map((checkin) => (
@@ -1366,11 +1366,9 @@ export default function KRCheckins() {
                               KR{index + 1}
                             </TableCell>
                             <TableCell className="sticky left-[60px] bg-background z-10 px-3">
-                              <div className="text-sm font-medium truncate max-w-[230px]">{kr.title}</div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                <div>Tipo: {translateType(kr.type)}</div>
-                                <div>Direção: {translateDirection(kr.direction)}</div>
-                                <div>Unidade: {kr.unit || '--'}</div>
+                              <div className="text-sm font-medium uppercase whitespace-normal">{kr.title}</div>
+                              <div className="text-xs text-muted-foreground mt-1 uppercase whitespace-nowrap">
+                                Tipo: {translateType(kr.type)} • Direção: {translateDirection(kr.direction)}
                               </div>
                             </TableCell>
                             {quarterCheckins.map((checkin) => {
