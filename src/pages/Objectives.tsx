@@ -90,7 +90,7 @@ export default function Objectives() {
   const { user } = useAuth();
   const { isAdmin, isUser } = useUserRole();
   const { toast } = useToast();
-  
+
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -212,7 +212,7 @@ export default function Objectives() {
           .from('companies')
           .select('id, name')
           .order('name');
-        
+
         if (companiesData) {
           setCompanies(companiesData);
         }
@@ -338,7 +338,7 @@ export default function Objectives() {
       // Agrupar KRs por objetivo e usar percent_obj salvo
       const objsWithProgress: ObjectiveWithProgress[] = objectivesData.map(obj => {
         const objKrs = krsWithProgress.filter(kr => kr.objective_id === obj.id);
-        
+
         // Ordenar KRs por progresso (maior primeiro)
         objKrs.sort((a, b) => b.progress - a.progress);
 
@@ -398,7 +398,7 @@ export default function Objectives() {
 
       // Recarregar objetivos
       await loadObjectives();
-      
+
       setDeleteDialogOpen(false);
       setObjectiveToDelete(null);
     } catch (error: any) {
@@ -616,10 +616,10 @@ export default function Objectives() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 text-left space-y-2">
                               <div className="flex items-center gap-2">
-                                <CardTitle className="text-xl">{objective.title}</CardTitle>
+                                <CardTitle className="text-2xl">{objective.title}</CardTitle>
                                 {getStatusBadge(objective.status)}
                               </div>
-                              
+
                               {objective.description && (
                                 <p className="text-sm text-muted-foreground">
                                   {objective.description}
@@ -628,11 +628,11 @@ export default function Objectives() {
 
                               {/* Progresso do Objetivo */}
                               <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-muted-foreground">Progresso</span>
-                                  <span className="font-bold">{objective.progress}%</span>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-muted-foreground">Progresso</span>
+                                  <span className="text-2xl font-bold">{objective.progress}%</span>
                                 </div>
-                                <Progress 
+                                <Progress
                                   value={objective.progress}
                                   style={{ '--progress-color': getProgressColor(objective.progress) } as any}
                                 />
@@ -699,12 +699,12 @@ export default function Objectives() {
                                   <CardContent className="p-4 space-y-3">
                                     <div className="flex items-start justify-between gap-4">
                                       <div className="flex-1 space-y-1">
-                                        <div className="font-medium">
+                                        <div className="text-lg font-semibold">
                                           {kr.code && <span className="text-primary">{kr.code}</span>}
                                           {kr.code && ' - '}
                                           {kr.title}
                                         </div>
-                                        
+
                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                           <div>
                                             <span className="font-medium">Atual:</span> {kr.current}
@@ -723,10 +723,10 @@ export default function Objectives() {
                                       </div>
 
                                       <div className="flex-shrink-0 text-right flex items-center gap-2">
-                                        <Badge 
+                                        <Badge
                                           variant="secondary"
-                                          className="font-bold"
-                                          style={{ 
+                                          className="text-lg font-bold"
+                                          style={{
                                             backgroundColor: getProgressColor(kr.progress) + '20',
                                             color: getProgressColor(kr.progress)
                                           }}
@@ -764,7 +764,7 @@ export default function Objectives() {
                                       </div>
                                     </div>
 
-                                    <Progress 
+                                    <Progress
                                       value={kr.progress}
                                       style={{ '--progress-color': getProgressColor(kr.progress) } as any}
                                       className="h-2"
