@@ -315,7 +315,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!user || !selectedCompanyId || roleLoading) return;
+    if (!user || !selectedCompanyId) return;
 
     const loadDashboard = async () => {
       try {
@@ -461,7 +461,7 @@ export default function Dashboard() {
     };
 
     loadDashboard();
-  }, [user, selectedCompanyId, role, roleLoading]);
+  }, [user, selectedCompanyId, role]);
 
   const getInitials = (name: string) => {
     return name
