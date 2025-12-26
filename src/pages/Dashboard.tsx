@@ -317,7 +317,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user || !selectedCompanyId) return;
 
-    const loadDashboard = async () => {
+    const loadBasicData = async () => {
       try {
         setLoading(true);
 
@@ -329,6 +329,7 @@ export default function Dashboard() {
 
         if (!profile || !profile.company_id) {
           setAppState(null);
+          setLoading(false);
           return;
         }
 
@@ -342,6 +343,7 @@ export default function Dashboard() {
 
         if (!quarters || quarters.length === 0) {
           setAppState(null);
+          setLoading(false);
           return;
         }
 
@@ -359,109 +361,112 @@ export default function Dashboard() {
         };
 
         setAppState(state);
-
-        if (activeQuarter) {
-          const userIdFilter = role === 'admin' ? null : user.id;
-
-          let objectivesQuery = supabase
-            .from('objectives')
-            .select('id')
-            .eq('company_id', selectedCompanyId)
-            .eq('quarter_id', activeQuarter.id)
-            .eq('archived', false);
-
-          if (userIdFilter) {
-            objectivesQuery = objectivesQuery.eq('user_id', userIdFilter);
-          }
-
-          const { data: userObjectives } = await objectivesQuery;
-
-          const objCount = userObjectives?.length ?? 0;
-          setActiveObjectivesCount(objCount);
-
-          if (objCount > 0) {
-            const objectiveIds = userObjectives!.map(obj => obj.id);
-            const { count } = await supabase
-              .from('key_results')
-              .select('*', { count: 'exact', head: true })
-              .eq('company_id', selectedCompanyId)
-              .in('objective_id', objectiveIds);
-
-            setActiveOKRsCount(count ?? 0);
-          } else {
-            setActiveOKRsCount(0);
-          }
-
-          let calculatedProgress = 0;
-
-          if (role !== 'admin') {
-            const { data: quarterResult } = await supabase
-              .from('quarter_results')
-              .select('result_percent')
-              .eq('company_id', selectedCompanyId)
-              .eq('user_id', user.id)
-              .eq('quarter_id', activeQuarter.id)
-              .maybeSingle();
-
-            if (quarterResult && quarterResult.result_percent !== null) {
-              calculatedProgress = Math.round(quarterResult.result_percent);
-            } else {
-              calculatedProgress = await calculateQuarterProgress(
-                selectedCompanyId,
-                activeQuarter.id,
-                user.id
-              );
-            }
-          } else {
-            // Admin: Calculate average of all users' quarter results
-            const { data: allQuarterResults } = await supabase
-              .from('quarter_results')
-              .select('result_percent')
-              .eq('company_id', selectedCompanyId)
-              .eq('quarter_id', activeQuarter.id);
-
-            if (allQuarterResults && allQuarterResults.length > 0) {
-              const validResults = allQuarterResults
-                .map(r => r.result_percent)
-                .filter((val): val is number => val !== null);
-
-              if (validResults.length > 0) {
-                const avg = validResults.reduce((sum, val) => sum + val, 0) / validResults.length;
-                calculatedProgress = Math.round(avg);
-              }
-            }
-          }
-
-          setCurrentQuarterProgress(calculatedProgress);
-
-          const rankings = await calculateUserRankingsFromResults(selectedCompanyId, activeQuarter.id);
-          setUserRankings(rankings);
-
-          const objRanking = await calculateObjectiveRankings(selectedCompanyId, activeQuarter.id, userIdFilter);
-          setObjectiveRankings(objRanking);
-
-          const okrRanking = await calculateOKRRankings(selectedCompanyId, activeQuarter.id, userIdFilter);
-          setOKRRankings(okrRanking);
-        } else {
-          setActiveObjectivesCount(0);
-          setActiveOKRsCount(0);
-          setCurrentQuarterProgress(0);
-          setUserRankings([]);
-          setObjectiveRankings([]);
-          setOKRRankings([]);
-        }
-
-        const perf = await calculateQuarterPerformanceFromResults(state, role === 'admin' ? null : user.id);
-        setQuarterPerformance(perf);
+        setLoading(false);
       } catch (error) {
-        console.error('Erro ao carregar dashboard:', error);
-      } finally {
+        console.error('Erro ao carregar dados básicos:', error);
         setLoading(false);
       }
     };
 
-    loadDashboard();
-  }, [user, selectedCompanyId, role]);
+    loadBasicData();
+  }, [user, selectedCompanyId]);
+
+  useEffect(() => {
+    if (!appState || !appState.active_quarter || !role) return;
+
+    const loadRoleDependentData = async () => {
+      try {
+        const activeQuarter = appState.active_quarter!;
+        const userIdFilter = role === 'admin' ? null : user!.id;
+
+        let objectivesQuery = supabase
+          .from('objectives')
+          .select('id')
+          .eq('company_id', selectedCompanyId!)
+          .eq('quarter_id', activeQuarter.id)
+          .eq('archived', false);
+
+        if (userIdFilter) {
+          objectivesQuery = objectivesQuery.eq('user_id', userIdFilter);
+        }
+
+        const { data: userObjectives } = await objectivesQuery;
+
+        const objCount = userObjectives?.length ?? 0;
+        setActiveObjectivesCount(objCount);
+
+        if (objCount > 0) {
+          const objectiveIds = userObjectives!.map(obj => obj.id);
+          const { count } = await supabase
+            .from('key_results')
+            .select('*', { count: 'exact', head: true })
+            .eq('company_id', selectedCompanyId!)
+            .in('objective_id', objectiveIds);
+
+          setActiveOKRsCount(count ?? 0);
+        } else {
+          setActiveOKRsCount(0);
+        }
+
+        let calculatedProgress = 0;
+
+        if (role !== 'admin') {
+          const { data: quarterResult } = await supabase
+            .from('quarter_results')
+            .select('result_percent')
+            .eq('company_id', selectedCompanyId!)
+            .eq('user_id', user!.id)
+            .eq('quarter_id', activeQuarter.id)
+            .maybeSingle();
+
+          if (quarterResult && quarterResult.result_percent !== null) {
+            calculatedProgress = Math.round(quarterResult.result_percent);
+          } else {
+            calculatedProgress = await calculateQuarterProgress(
+              selectedCompanyId!,
+              activeQuarter.id,
+              user!.id
+            );
+          }
+        } else {
+          const { data: allQuarterResults } = await supabase
+            .from('quarter_results')
+            .select('result_percent')
+            .eq('company_id', selectedCompanyId!)
+            .eq('quarter_id', activeQuarter.id);
+
+          if (allQuarterResults && allQuarterResults.length > 0) {
+            const validResults = allQuarterResults
+              .map(r => r.result_percent)
+              .filter((val): val is number => val !== null);
+
+            if (validResults.length > 0) {
+              const avg = validResults.reduce((sum, val) => sum + val, 0) / validResults.length;
+              calculatedProgress = Math.round(avg);
+            }
+          }
+        }
+
+        setCurrentQuarterProgress(calculatedProgress);
+
+        const rankings = await calculateUserRankingsFromResults(selectedCompanyId!, activeQuarter.id);
+        setUserRankings(rankings);
+
+        const objRanking = await calculateObjectiveRankings(selectedCompanyId!, activeQuarter.id, userIdFilter);
+        setObjectiveRankings(objRanking);
+
+        const okrRanking = await calculateOKRRankings(selectedCompanyId!, activeQuarter.id, userIdFilter);
+        setOKRRankings(okrRanking);
+
+        const perf = await calculateQuarterPerformanceFromResults(appState, role === 'admin' ? null : user!.id);
+        setQuarterPerformance(perf);
+      } catch (error) {
+        console.error('Erro ao carregar dados dependentes de role:', error);
+      }
+    };
+
+    loadRoleDependentData();
+  }, [appState, role]);
 
   const getInitials = (name: string) => {
     return name

@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn('Auth initialization timed out - forcing loading to false');
           setLoading(false);
         }
-      }, 5000);
+      }, 3000);
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
