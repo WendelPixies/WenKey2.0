@@ -317,58 +317,84 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user || !selectedCompanyId) return;
 
+    let mounted = true;
+
     const loadBasicData = async () => {
+      // Safety timeout
+      const timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn('Dashboard: loadBasicData timed out');
+          setLoading(false);
+        }
+      }, 5000);
+
       try {
         setLoading(true);
 
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id, company_id, full_name, sector, avatar_url, is_active')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (!profile || !profile.company_id) {
-          setAppState(null);
+        if (profileError) {
+          console.error('Erro ao buscar perfil:', profileError);
+        }
+
+        if (mounted) {
+          if (!profile || !profile.company_id) {
+            setAppState(null);
+            setLoading(false);
+            return;
+          }
+
+          setUserProfile(profile);
+
+          const { data: quarters, error: quartersError } = await supabase
+            .from('quarters')
+            .select('id, name, start_date, end_date, is_active')
+            .eq('company_id', selectedCompanyId)
+            .order('start_date', { ascending: false });
+
+          if (quartersError) {
+            console.error('Erro ao buscar quarters:', quartersError);
+          }
+
+          if (!quarters || quarters.length === 0) {
+            setAppState(null);
+            setLoading(false);
+            return;
+          }
+
+          const today = new Date().toISOString().split('T')[0];
+          let activeQuarter = quarters.find(q => q.start_date <= today && q.end_date >= today);
+          if (!activeQuarter) {
+            activeQuarter = quarters[0];
+          }
+
+          const state: AppState = {
+            company_id: selectedCompanyId,
+            user_id: user.id,
+            quarters,
+            active_quarter: activeQuarter ?? null,
+          };
+
+          setAppState(state);
           setLoading(false);
-          return;
         }
-
-        setUserProfile(profile);
-
-        const { data: quarters } = await supabase
-          .from('quarters')
-          .select('id, name, start_date, end_date, is_active')
-          .eq('company_id', selectedCompanyId)
-          .order('start_date', { ascending: false });
-
-        if (!quarters || quarters.length === 0) {
-          setAppState(null);
-          setLoading(false);
-          return;
-        }
-
-        const today = new Date().toISOString().split('T')[0];
-        let activeQuarter = quarters.find(q => q.start_date <= today && q.end_date >= today);
-        if (!activeQuarter) {
-          activeQuarter = quarters[0];
-        }
-
-        const state: AppState = {
-          company_id: selectedCompanyId,
-          user_id: user.id,
-          quarters,
-          active_quarter: activeQuarter ?? null,
-        };
-
-        setAppState(state);
-        setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar dados básicos:', error);
-        setLoading(false);
+        if (mounted) setLoading(false);
+      } finally {
+        clearTimeout(timeoutId);
       }
     };
 
     loadBasicData();
+
+    return () => {
+      mounted = false;
+    };
   }, [user, selectedCompanyId]);
 
   useEffect(() => {

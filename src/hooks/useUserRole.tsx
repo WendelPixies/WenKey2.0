@@ -5,32 +5,63 @@ import { useAuth } from '@/contexts/AuthContext';
 export type UserRole = 'admin' | 'manager' | 'user';
 
 export function useUserRole() {
-  const { user } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const [role, setRole] = useState<UserRole>('user');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     if (!user) {
       setRole('user');
       setLoading(false);
       return;
     }
 
-    const fetchRole = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('permission_type')
-        .eq('id', user.id)
-        .single();
-
-      if (!error && data?.permission_type) {
-        setRole(data.permission_type as UserRole);
-      }
+    // Prioritize role from AuthContext if available
+    if (authProfile?.permission_type) {
+      setRole(authProfile.permission_type as UserRole);
       setLoading(false);
+      return;
+    }
+
+    const fetchRole = async () => {
+      // Safety timeout
+      const timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn('useUserRole: fetchRole timed out');
+          setLoading(false);
+        }
+      }, 3000);
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('permission_type' as any)
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (mounted) {
+          const profileData = data as any;
+          if (!error && profileData?.permission_type) {
+            setRole(profileData.permission_type as UserRole);
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error fetching role:', err);
+        if (mounted) setLoading(false);
+      } finally {
+        clearTimeout(timeoutId);
+      }
     };
 
     fetchRole();
-  }, [user]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, authProfile]);
 
   return {
     role,

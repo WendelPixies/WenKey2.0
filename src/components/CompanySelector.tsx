@@ -21,7 +21,15 @@ export function CompanySelector() {
   useEffect(() => {
     if (!user) return;
 
+    let mounted = true;
     const fetchCompanies = async () => {
+      const timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn('CompanySelector: fetchCompanies timed out');
+          setLoading(false);
+        }
+      }, 3000);
+
       try {
         const { data, error } = await supabase
           .from('company_members')
@@ -30,28 +38,37 @@ export function CompanySelector() {
 
         if (error) throw error;
 
-        const companyList = data
-          .map((item: any) => item.companies)
-          .filter(Boolean) as Company[];
+        if (mounted) {
+          const companyList = data
+            .map((item: any) => item.companies)
+            .filter(Boolean) as Company[];
 
-        setCompanies(companyList);
+          setCompanies(companyList);
 
-        const hasCurrentCompany = companyList.some(
-          (company) => company.id === selectedCompanyId
-        );
+          const hasCurrentCompany = companyList.some(
+            (company) => company.id === selectedCompanyId
+          );
 
-        // Auto-select first company if none selected or current selection is invalid
-        if ((!selectedCompanyId || !hasCurrentCompany) && companyList.length > 0) {
-          setSelectedCompanyId(companyList[0].id);
+          // Auto-select first company if none selected or current selection is invalid
+          if ((!selectedCompanyId || !hasCurrentCompany) && companyList.length > 0) {
+            setSelectedCompanyId(companyList[0].id);
+          }
         }
       } catch (error) {
         console.error('Error fetching companies:', error);
       } finally {
-        setLoading(false);
+        clearTimeout(timeoutId);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchCompanies();
+
+    return () => {
+      mounted = false;
+    };
   }, [user, selectedCompanyId, setSelectedCompanyId]);
 
   const selectedCompany = companies.find((company) => company.id === selectedCompanyId);

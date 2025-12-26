@@ -218,26 +218,45 @@ export function Layout({ children }: LayoutProps) {
   async function loadProfile() {
     if (!user) return;
 
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('full_name, position, avatar_url, company_id')
-      .eq('id', user.id)
-      .single();
+    let mounted = true;
+    const timeoutId = setTimeout(() => {
+      console.warn('Layout: loadProfile timed out');
+    }, 3000);
 
-    if (profileData) {
-      setProfile(profileData);
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, position, avatar_url, company_id')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (profileData.company_id) {
-        const { data: companyData } = await supabase
-          .from('companies')
-          .select('name')
-          .eq('id', profileData.company_id)
-          .single();
+      if (profileError) {
+        console.error('Layout: Error loading profile:', profileError);
+      }
 
-        if (companyData) {
-          setCompany(companyData);
+      if (profileData) {
+        setProfile(profileData);
+
+        if (profileData.company_id) {
+          const { data: companyData, error: companyError } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('id', profileData.company_id)
+            .maybeSingle();
+
+          if (companyError) {
+            console.error('Layout: Error loading company:', companyError);
+          }
+
+          if (companyData) {
+            setCompany(companyData);
+          }
         }
       }
+    } catch (err) {
+      console.error('Layout: Unexpected error in loadProfile:', err);
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 }
