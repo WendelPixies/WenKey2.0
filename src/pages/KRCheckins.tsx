@@ -1365,10 +1365,12 @@ export default function KRCheckins() {
                             <TableCell className="sticky left-0 bg-background z-10 font-bold px-2">
                               KR{index + 1}
                             </TableCell>
-                            <TableCell className="sticky left-[60px] bg-background z-10 px-3">
-                              <div className="text-sm font-medium uppercase whitespace-normal">{kr.title}</div>
-                              <div className="text-xs text-muted-foreground mt-1 uppercase whitespace-nowrap">
-                                Tipo: {translateType(kr.type)} • Direção: {translateDirection(kr.direction)}
+                            <TableCell className="sticky left-[60px] bg-background z-10 px-3 min-h-[140px] min-w-[200px]">
+                              <div className="flex flex-col justify-center min-h-[140px]">
+                                <div className="text-sm font-medium uppercase whitespace-normal">{kr.title}</div>
+                                <div className="text-xs text-muted-foreground mt-1 uppercase whitespace-nowrap">
+                                  Tipo: {translateType(kr.type)} • Direção: {translateDirection(kr.direction)}
+                                </div>
                               </div>
                             </TableCell>
                             {quarterCheckins.map((checkin) => {
