@@ -94,7 +94,7 @@ export function CompanySelector() {
 
   const selectedCompany = companies.find((company) => company.id === selectedCompanyId);
   const isAdmin = role === 'admin';
-  const showSelector = isAdmin || companies.length > 1;
+  const showSelector = isAdmin;
 
   if (loading || roleLoading) {
     return (
