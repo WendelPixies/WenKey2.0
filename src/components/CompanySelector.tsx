@@ -1,4 +1,4 @@
-npm run devimport { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,17 +44,17 @@ export function CompanySelector() {
           if (error) throw error;
           companyList = data || [];
         } else {
-          // Normal users only see companies they are members of
+          // Normal users only see active companies they are members of
           const { data, error } = await supabase
             .from('company_members')
-            .select('company_id, companies(id, name)')
+            .select('company_id, companies(id, name, is_active)')
             .eq('user_id', user.id);
 
           if (error) throw error;
 
           companyList = data
             .map((item: any) => item.companies)
-            .filter(Boolean) as Company[];
+            .filter((c: any) => c && c.is_active) as Company[];
 
           // Sort by name
           companyList.sort((a, b) => a.name.localeCompare(b.name));
@@ -63,6 +63,8 @@ export function CompanySelector() {
         if (mounted) {
           setCompanies(companyList);
 
+          // Use the latest selectedCompanyId from context/ref if possible
+          // But since we are in an effect, we use the value from capture
           const hasCurrentCompany = companyList.some(
             (company) => company.id === selectedCompanyId
           );
@@ -87,10 +89,12 @@ export function CompanySelector() {
     return () => {
       mounted = false;
     };
-  }, [user, role, roleLoading, selectedCompanyId, setSelectedCompanyId]);
+    // Only re-fetch when user or role changes
+  }, [user, role, roleLoading, setSelectedCompanyId]);
 
   const selectedCompany = companies.find((company) => company.id === selectedCompanyId);
   const isAdmin = role === 'admin';
+  const showSelector = isAdmin || companies.length > 1;
 
   if (loading || roleLoading) {
     return (
@@ -103,7 +107,7 @@ export function CompanySelector() {
     );
   }
 
-  if (!isAdmin) {
+  if (!showSelector) {
     return (
       <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-foreground">
         <Building2 className="w-4 h-4 text-sidebar-foreground/80" />
@@ -117,7 +121,7 @@ export function CompanySelector() {
     );
   }
 
-  if (companies.length === 0) {
+  if (companies.length === 0 && isAdmin) {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
         <Building2 className="w-4 h-4 text-sidebar-foreground/60" />
