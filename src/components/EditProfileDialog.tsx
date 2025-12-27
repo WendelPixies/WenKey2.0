@@ -45,7 +45,7 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       let avatarUrl = profile?.avatar_url;
@@ -53,20 +53,18 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
       // Upload avatar if a new file was selected
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const fileName = `avatar-${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, avatarFile, { upsert: true });
+          .upload(filePath, avatarFile, {
+            upsert: true,
+            contentType: avatarFile.type
+          });
 
         if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
-
-        avatarUrl = publicUrl;
+        avatarUrl = filePath;
       }
 
       // Update profile
@@ -87,11 +85,11 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
 
       onProfileUpdated();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar perfil:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível atualizar o perfil.',
+        description: error.message || 'Não foi possível atualizar o perfil.',
         variant: 'destructive',
       });
     } finally {

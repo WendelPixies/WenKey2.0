@@ -230,12 +230,18 @@ export default function Dashboard() {
       const profile = profilesMap.get(result.user_id);
       if (!profile) return;
 
+      let avatar_url = profile.avatar_url;
+      if (avatar_url && !avatar_url.startsWith('http')) {
+        const { data } = supabase.storage.from('avatars').getPublicUrl(avatar_url);
+        avatar_url = data.publicUrl;
+      }
+
       rankings.push({
         rank: rankings.length + 1,
         user_id: result.user_id,
         full_name: profile.full_name,
         sector: profile.sector,
-        avatar_url: profile.avatar_url,
+        avatar_url,
         result_pct: Math.round(result.result_percent ?? 0),
       });
     });
@@ -348,7 +354,17 @@ export default function Dashboard() {
             return;
           }
 
-          setUserProfile(profile);
+          if (profile) {
+            let avatar_url = profile.avatar_url;
+            if (avatar_url && !avatar_url.startsWith('http')) {
+              const { data } = supabase.storage.from('avatars').getPublicUrl(avatar_url);
+              avatar_url = data.publicUrl;
+            }
+            setUserProfile({
+              ...profile,
+              avatar_url
+            });
+          }
 
           const { data: quarters, error: quartersError } = await supabase
             .from('quarters')

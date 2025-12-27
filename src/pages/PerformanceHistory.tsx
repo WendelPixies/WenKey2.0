@@ -127,7 +127,17 @@ export default function PerformanceHistory() {
                 .order('full_name');
 
             if (usersError) throw usersError;
-            setUsers(usersData || []);
+
+            const normalizedUsers = (usersData || []).map(u => {
+                let avatarUrl = u.avatar_url;
+                if (avatarUrl && !avatarUrl.startsWith('http')) {
+                    const { data } = supabase.storage.from('avatars').getPublicUrl(avatarUrl);
+                    avatarUrl = data.publicUrl;
+                }
+                return { ...u, avatar_url: avatarUrl };
+            });
+
+            setUsers(normalizedUsers);
 
             // 3. Fetch Quarter Results
             const { data: resultsData, error: resultsError } = await supabase

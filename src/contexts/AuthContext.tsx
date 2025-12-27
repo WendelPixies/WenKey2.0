@@ -10,6 +10,7 @@ export interface Profile {
   is_active: boolean;
   permission_type: 'user' | 'manager' | 'admin';
   company_id: string | null;
+  avatar_url: string | null;
 }
 
 interface AuthContextType {
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Tentamos buscar as colunas que temos certeza que existem
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email, is_active, company_id')
+        .select('id, full_name, email, is_active, company_id, avatar_url')
         .eq('id', userId)
         .maybeSingle(); // Usamos maybeSingle para evitar erro se não houver perfil
 
@@ -54,8 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq('id', userId)
           .maybeSingle();
 
+        let avatar_url = data.avatar_url;
+        if (avatar_url && !avatar_url.startsWith('http')) {
+          const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(avatar_url);
+          avatar_url = urlData.publicUrl;
+        }
+
         setProfile({
           ...data,
+          avatar_url,
           permission_type: (roleData as any)?.permission_type || 'user'
         } as Profile);
       } else {

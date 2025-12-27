@@ -29,7 +29,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { signOut, user } = useAuth();
+  const { signOut, user, refreshProfile } = useAuth();
   const { role } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,33 +39,9 @@ export function Layout({ children }: LayoutProps) {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-
-    const loadProfile = async () => {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name, position, avatar_url, company_id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileData) {
-        setProfile(profileData);
-
-        if (profileData.company_id) {
-          const { data: companyData } = await supabase
-            .from('companies')
-            .select('name')
-            .eq('id', profileData.company_id)
-            .single();
-
-          if (companyData) {
-            setCompany(companyData);
-          }
-        }
-      }
-    };
-
-    loadProfile();
+    if (user) {
+      loadProfile();
+    }
   }, [user]);
 
   const navItems = [
@@ -206,9 +182,10 @@ export function Layout({ children }: LayoutProps) {
         open={editProfileOpen}
         onOpenChange={setEditProfileOpen}
         profile={profile}
-        onProfileUpdated={() => {
+        onProfileUpdated={async () => {
           if (user) {
-            loadProfile();
+            await refreshProfile();
+            await loadProfile();
           }
         }}
       />
@@ -235,7 +212,12 @@ export function Layout({ children }: LayoutProps) {
       }
 
       if (profileData) {
-        setProfile(profileData);
+        let avatarUrl = profileData.avatar_url;
+        if (avatarUrl && !avatarUrl.startsWith('http')) {
+          const { data } = supabase.storage.from('avatars').getPublicUrl(avatarUrl);
+          avatarUrl = data.publicUrl;
+        }
+        setProfile({ ...profileData, avatar_url: avatarUrl });
 
         if (profileData.company_id) {
           const { data: companyData, error: companyError } = await supabase
