@@ -397,10 +397,14 @@ export default function Users() {
 
   const filteredUsers = users.filter(user => {
     const matchesCompany = filterCompanyId === 'all' || user.company_id === filterCompanyId;
+
+    // Status is 'active' only if is_active is true AND company_id exists
+    const isUserActive = user.is_active && user.company_id;
+
     const matchesStatus =
       filterStatus === 'all' ||
-      (filterStatus === 'active' && user.is_active) ||
-      (filterStatus === 'pending' && !user.is_active);
+      (filterStatus === 'active' && isUserActive) ||
+      (filterStatus === 'pending' && !isUserActive);
 
     return matchesCompany && matchesStatus;
   });
@@ -498,12 +502,17 @@ export default function Users() {
                           className="p-0 h-auto hover:bg-transparent"
                           onClick={() => toggleUserStatus(user.id, user.is_active)}
                         >
-                          <Badge
-                            variant={user.is_active ? 'default' : 'secondary'}
-                            className={!user.is_active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200' : ''}
-                          >
-                            {user.is_active ? 'Ativo' : 'Pendente'}
-                          </Badge>
+                          {(() => {
+                            const isUserActive = user.is_active && user.company_id;
+                            return (
+                              <Badge
+                                variant={isUserActive ? 'default' : 'secondary'}
+                                className={!isUserActive ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200' : ''}
+                              >
+                                {isUserActive ? 'Ativo' : 'Pendente'}
+                              </Badge>
+                            );
+                          })()}
                         </Button>
                       </TableCell>
                       <TableCell className="text-right">
