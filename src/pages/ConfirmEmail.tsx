@@ -96,7 +96,7 @@ const ConfirmEmail = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="token">Código de 6 dígitos</Label>
+              <Label htmlFor="token">Código de Confirmação</Label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
@@ -104,9 +104,9 @@ const ConfirmEmail = () => {
                   type="text"
                   value={token}
                   onChange={(event) => setToken(event.target.value)}
-                  placeholder="000000"
-                  className="pl-10 text-center tracking-[0.5em] font-mono text-lg"
-                  maxLength={6}
+                  placeholder="00000000"
+                  className="pl-10 text-center tracking-[0.3em] font-mono text-lg"
+                  maxLength={8}
                   required
                 />
               </div>
