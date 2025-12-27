@@ -139,9 +139,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [navigate]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-    navigate('/auth');
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      // Always cleanup and redirect
+      setProfile(null);
+      setSession(null);
+      setUser(null);
+      localStorage.removeItem('selectedCompanyId');
+      navigate('/auth', { replace: true });
+    }
   };
 
   return (
