@@ -23,18 +23,11 @@ export function CompanySelector() {
 
     let mounted = true;
     const fetchCompanies = async () => {
-      const timeoutId = setTimeout(() => {
-        if (mounted) {
-          console.warn('CompanySelector: fetchCompanies timed out');
-          setLoading(false);
-        }
-      }, 5000);
-
+      setLoading(true);
       try {
         let companyList: Company[] = [];
 
         if (role === 'admin') {
-          // Admin can see all active companies
           const { data, error } = await supabase
             .from('companies')
             .select('id, name')
@@ -44,7 +37,6 @@ export function CompanySelector() {
           if (error) throw error;
           companyList = data || [];
         } else {
-          // Normal users only see active companies they are members of
           const { data, error } = await supabase
             .from('company_members')
             .select('company_id, companies(id, name, is_active)')
@@ -56,41 +48,35 @@ export function CompanySelector() {
             .map((item: any) => item.companies)
             .filter((c: any) => c && c.is_active) as Company[];
 
-          // Sort by name
           companyList.sort((a, b) => a.name.localeCompare(b.name));
         }
 
         if (mounted) {
           setCompanies(companyList);
 
-          // Use the latest selectedCompanyId from context/ref if possible
-          // But since we are in an effect, we use the value from capture
-          const hasCurrentCompany = companyList.some(
-            (company) => company.id === selectedCompanyId
-          );
+          // Only auto-select if we absolutely don't have a valid selection
+          const currentId = localStorage.getItem('selectedCompanyId');
+          const hasCurrentValid = companyList.some(c => c.id === currentId);
 
-          // Auto-select first company if none selected or current selection is invalid
-          if ((!selectedCompanyId || !hasCurrentCompany) && companyList.length > 0) {
-            setSelectedCompanyId(companyList[0].id);
+          if (!currentId || !hasCurrentValid) {
+            if (companyList.length > 0) {
+              setSelectedCompanyId(companyList[0].id);
+            }
+          } else if (currentId && !selectedCompanyId) {
+            // Restore from localStorage if context is empty
+            setSelectedCompanyId(currentId);
           }
         }
       } catch (error) {
         console.error('Error fetching companies:', error);
       } finally {
-        clearTimeout(timeoutId);
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
 
     fetchCompanies();
-
-    return () => {
-      mounted = false;
-    };
-    // Only re-fetch when user or role changes
-  }, [user, role, roleLoading, setSelectedCompanyId]);
+    return () => { mounted = false; };
+  }, [user, role, roleLoading]); // Removed setSelectedCompanyId to avoid unnecessary re-runs
 
   const selectedCompany = companies.find((company) => company.id === selectedCompanyId);
   const isAdmin = role === 'admin';

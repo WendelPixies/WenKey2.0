@@ -188,12 +188,14 @@ export default function PerformanceHistory() {
             .slice(0, 2);
     };
 
-    const filteredUsers = useMemo(() => {
-        if (activeUsersOnly) {
-            return users.filter(u => u.is_active);
-        }
-        return users;
-    }, [users, activeUsersOnly]);
+    const sortedAndFilteredUsers = useMemo(() => {
+        const list = activeUsersOnly ? users.filter(u => u.is_active) : [...users];
+        return list.sort((a, b) => {
+            const avgA = getUserAverage(a.id);
+            const avgB = getUserAverage(b.id);
+            return avgB - avgA;
+        });
+    }, [users, activeUsersOnly, results]);
 
     const effectiveCompanyId = isAdmin ? filterCompanyId : selectedCompanyId;
 
@@ -216,7 +218,7 @@ export default function PerformanceHistory() {
                             <TrendingUp className="h-8 w-8" />
                             Histórico de Performance
                         </h1>
-                        <p className="text-muted-foreground">
+                        <p className="text-base font-normal text-muted-foreground">
                             Acompanhamento de resultados por quarter e média anual dos colaboradores.
                         </p>
                     </div>
@@ -266,9 +268,9 @@ export default function PerformanceHistory() {
                             <div className="flex justify-center py-12">
                                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
                             </div>
-                        ) : filteredUsers.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                Nenhum usuário encontrado.
+                        ) : sortedAndFilteredUsers.length === 0 ? (
+                            <div className="text-center py-8 text-base font-normal text-muted-foreground">
+                                Nenhum colaborador encontrado.
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
@@ -284,13 +286,13 @@ export default function PerformanceHistory() {
                                                     </div>
                                                 </TableHead>
                                             ))}
-                                            <TableHead className="text-center font-bold bg-muted/30 w-[120px]">
+                                            <TableHead className="text-center font-normal bg-muted/30 w-[120px] text-base">
                                                 Média Geral
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredUsers.map(user => {
+                                        {sortedAndFilteredUsers.map(user => {
                                             const avg = getUserAverage(user.id);
                                             return (
                                                 <TableRow key={user.id}>
@@ -301,9 +303,9 @@ export default function PerformanceHistory() {
                                                                 <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
                                                             </Avatar>
                                                             <div>
-                                                                <div className="font-medium">{user.full_name}</div>
+                                                                <div className="text-base font-normal">{user.full_name}</div>
                                                                 {user.sector && (
-                                                                    <div className="text-xs text-muted-foreground">{user.sector}</div>
+                                                                    <div className="text-sm text-muted-foreground">{user.sector}</div>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -312,9 +314,9 @@ export default function PerformanceHistory() {
                                                     {quarters.map(quarter => {
                                                         const result = getResult(user.id, quarter.id);
                                                         return (
-                                                            <TableCell key={quarter.id} className="text-center">
+                                                            <TableCell key={quarter.id} className="text-center text-base font-normal">
                                                                 {result ? (
-                                                                    <span className={getPerformanceColor(result.result_percent)}>
+                                                                    <span className={getPerformanceColor(result.result_percent).replace('font-bold', 'font-normal')}>
                                                                         {Math.round(result.result_percent)}%
                                                                     </span>
                                                                 ) : (
@@ -326,11 +328,11 @@ export default function PerformanceHistory() {
 
                                                     <TableCell className="text-center bg-muted/30">
                                                         {avg > 0 ? (
-                                                            <Badge variant="outline" className={`${getPerformanceColor(avg)} border-current`}>
+                                                            <Badge variant="outline" className={`${getPerformanceColor(avg).replace('font-bold', 'font-normal')} border-current text-base font-normal`}>
                                                                 {avg}%
                                                             </Badge>
                                                         ) : (
-                                                            <span className="text-muted-foreground text-sm">-</span>
+                                                            <span className="text-muted-foreground text-base">-</span>
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
