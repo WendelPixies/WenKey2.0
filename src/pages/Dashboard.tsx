@@ -56,6 +56,7 @@ interface UserRanking {
 interface ObjectiveRanking {
   objective_title: string;
   result_pct: number;
+  kr_count: number;
 }
 
 interface OKRRanking {
@@ -256,37 +257,61 @@ export default function Dashboard() {
   ): Promise<ObjectiveRanking[]> => {
     if (!user) return [];
 
-    let query = supabase
+    // Busca TODOS os objetivos da empresa para este quarter, independente do usuário selecionado no dash
+    // Conforme pedido: "Verificar o percentual de todos os usuários da empresa selecionada"
+    const { data: allObjectives, error: objError } = await supabase
       .from('objectives')
-      .select('id, title, percent_obj, key_results (percent_kr)')
+      .select('id, title, percent_obj, user_id, key_results (id, percent_kr)')
       .eq('company_id', companyId)
       .eq('quarter_id', quarterId)
       .eq('archived', false);
 
-    if (userId) {
-      query = query.eq('user_id', userId);
+    if (objError || !allObjectives || allObjectives.length === 0) return [];
+
+    // Agrupar por título
+    const groups = new Map<string, { totalPct: number; userCount: number; krCount: number }>();
+
+    allObjectives.forEach(obj => {
+      const title = obj.title.trim();
+      const current = groups.get(title) || { totalPct: 0, userCount: 0, krCount: 0 };
+
+      // O percentual do objetivo já é atualizado pelo KRCheckins.tsx
+      current.totalPct += obj.percent_obj ?? 0;
+      current.userCount += 1;
+      current.krCount += (obj.key_results as any[])?.length || 0;
+
+      groups.set(title, current);
+    });
+
+    const result: ObjectiveRanking[] = [];
+
+    for (const [title, stats] of groups.entries()) {
+      const avg = Math.round(stats.totalPct / stats.userCount);
+      result.push({
+        objective_title: title,
+        result_pct: avg,
+        kr_count: stats.krCount
+      });
+
+      // Salva ou atualiza no Supabase conforme solicitado
+      try {
+        await supabase
+          .from('objective_group_results')
+          .upsert({
+            company_id: companyId,
+            quarter_id: quarterId,
+            objective_title: title,
+            avg_attainment_pct: avg,
+            kr_count: stats.krCount,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'company_id,quarter_id,objective_title' });
+      } catch (e) {
+        console.error('Erro ao salvar objective_group_results:', e);
+      }
     }
 
-    const { data: objectives } = await query;
-
-    if (!objectives || objectives.length === 0) return [];
-
-    return objectives
-      .map(obj => {
-        const krPercents = (obj.key_results ?? [])
-          .map(kr => kr.percent_kr ?? null)
-          .filter((value): value is number => typeof value === 'number');
-
-        const aggregated = krPercents.length > 0
-          ? Math.round(krPercents.reduce((sum, value) => sum + value, 0) / krPercents.length)
-          : Math.round(obj.percent_obj ?? 0);
-
-        return {
-          objective_title: obj.title,
-          result_pct: aggregated,
-        };
-      })
-      .filter(item => item.result_pct > 0)
+    return result
+      .filter(item => item.result_pct > 0 || item.kr_count > 0)
       .sort((a, b) => b.result_pct - a.result_pct);
   };
 
@@ -705,38 +730,73 @@ export default function Dashboard() {
             emptyMessage="Nenhum colaborador posicionado"
             data={userRankings}
           />
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Objetivos em Destaque
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Objetivos com maior percentual de atingimento.
-              </p>
-            </CardHeader>
-            <CardContent>
-              {objectiveRankings.length === 0 ? (
-                <p className="text-center text-muted-foreground">Nenhum objetivo disponível.</p>
-              ) : (
-                <div className="space-y-4">
-                  {objectiveRankings.map((objective, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{objective.objective_title}</span>
-                        <span className="text-muted-foreground">{objective.result_pct}%</span>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Atingimento por Objetivo
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Percentual médio de atingimento por objetivo na empresa.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {objectiveRankings.length === 0 ? (
+                  <p className="text-center text-muted-foreground">Nenhum objetivo disponível.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {objectiveRankings.map((objective, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{objective.objective_title}</span>
+                          <span className="text-muted-foreground">{objective.result_pct}%</span>
+                        </div>
+                        <Progress
+                          value={objective.result_pct}
+                          className="h-2"
+                          style={getProgressStyle(objective.result_pct)}
+                        />
                       </div>
-                      <Progress
-                        value={objective.result_pct}
-                        className="h-2"
-                        style={getProgressStyle(objective.result_pct)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Quantidade de OKRs por Objetivo
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Número de Key Results associados a cada objetivo.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {objectiveRankings.length === 0 ? (
+                  <p className="text-center text-muted-foreground">Nenhum objetivo disponível.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {objectiveRankings
+                      .sort((a, b) => b.kr_count - a.kr_count)
+                      .map((objective, index) => (
+                        <div key={index} className="flex items-center justify-between rounded-lg border p-3">
+                          <span className="font-medium">{objective.objective_title}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">_______</span>
+                            <Badge variant="secondary" className="font-bold">
+                              {objective.kr_count}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <Card>

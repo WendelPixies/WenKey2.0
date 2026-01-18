@@ -848,10 +848,41 @@ export default function KRCheckins() {
           ? Math.round(validPercents.reduce((sum, value) => sum + value, 0) / validPercents.length)
           : newPercent;
 
-      await supabase
+      const { data: objInfo } = await supabase
         .from('objectives')
         .update({ percent_obj: objectivePercent })
-        .eq('id', kr.objective_id);
+        .eq('id', kr.objective_id)
+        .select('title, quarter_id, company_id')
+        .single();
+
+      // Atualiza o agregado do grupo (mesmo título em toda a empresa)
+      if (objInfo) {
+        const { data: allSameObjectives } = await supabase
+          .from('objectives')
+          .select('percent_obj, key_results (id)')
+          .eq('company_id', objInfo.company_id)
+          .eq('quarter_id', objInfo.quarter_id)
+          .eq('title', objInfo.title)
+          .eq('archived', false);
+
+        if (allSameObjectives) {
+          const totalPct = allSameObjectives.reduce((sum, o) => sum + (o.percent_obj ?? 0), 0);
+          const userCount = allSameObjectives.length;
+          const krCount = allSameObjectives.reduce((sum, o) => sum + ((o.key_results as any[])?.length || 0), 0);
+          const avg = Math.round(totalPct / userCount);
+
+          await supabase
+            .from('objective_group_results')
+            .upsert({
+              company_id: objInfo.company_id,
+              quarter_id: objInfo.quarter_id,
+              objective_title: objInfo.title,
+              avg_attainment_pct: avg,
+              kr_count: krCount,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'company_id,quarter_id,objective_title' });
+        }
+      }
     } catch (error) {
       console.error('Erro ao sincronizar percentuais de objetivo/KR:', error);
     }
