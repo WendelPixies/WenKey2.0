@@ -65,6 +65,7 @@ interface OKRRanking {
   result_pct: number;
   owner_name: string | null;
   owner_sector: string | null;
+  owner_avatar_url: string | null;
 }
 
 export default function Dashboard() {
@@ -346,7 +347,7 @@ export default function Dashboard() {
 
     const { data: owners } = await supabase
       .from('profiles')
-      .select('id, full_name, sector')
+      .select('id, full_name, sector, avatar_url')
       .in('id', ownerIds);
 
     const ownersMap = new Map(owners?.map(o => [o.id, o]) || []);
@@ -356,12 +357,19 @@ export default function Dashboard() {
       const ownerId = (obj ? obj.user_id : null) || kr.user_id;
       const owner = ownersMap.get(ownerId);
 
+      let owner_avatar_url = owner?.avatar_url;
+      if (owner_avatar_url && !owner_avatar_url.startsWith('http')) {
+        const { data } = supabase.storage.from('avatars').getPublicUrl(owner_avatar_url);
+        owner_avatar_url = data.publicUrl;
+      }
+
       return {
         code: kr.code,
         title: kr.title,
         result_pct: Math.round(kr.percent_kr ?? 0),
         owner_name: owner?.full_name ?? null,
         owner_sector: owner?.sector ?? null,
+        owner_avatar_url: owner_avatar_url ?? null,
       };
     });
   };
@@ -555,28 +563,6 @@ export default function Dashboard() {
 
     loadRoleDependentData();
   }, [appState, role]);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getPerformanceColor = (pct: number) => {
-    if (pct <= 20) return '#FF0000';
-    if (pct <= 40) return '#FF6600';
-    if (pct <= 60) return '#FFCC00';
-    if (pct <= 80) return '#99CC00';
-    if (pct <= 100) return '#00CC00';
-    return '#009900';
-  };
-
-  type ProgressStyle = CSSProperties & {
-    '--progress-color'?: string;
-  };
 
   const getProgressStyle = (pct: number): ProgressStyle => ({
     '--progress-color': getPerformanceColor(pct),
@@ -840,8 +826,16 @@ export default function Dashboard() {
                         <span className="font-medium">
                           {okr.title}
                           {okr.owner_name && (
-                            <span className="ml-2 text-xs text-muted-foreground font-normal">
-                              - {okr.owner_name} ({okr.owner_sector ?? 'Sem setor'})
+                            <span className="ml-2 text-xs text-muted-foreground font-normal inline-flex items-center gap-1.5 align-middle">
+                              -
+                              <Avatar className="h-4 w-4">
+                                {okr.owner_avatar_url ? (
+                                  <AvatarImage src={okr.owner_avatar_url} alt={okr.owner_name} />
+                                ) : (
+                                  <AvatarFallback className="text-[8px]">{getInitials(okr.owner_name)}</AvatarFallback>
+                                )}
+                              </Avatar>
+                              {okr.owner_name} ({okr.owner_sector ?? 'Sem setor'})
                             </span>
                           )}
                         </span>
@@ -863,6 +857,30 @@ export default function Dashboard() {
     </Layout>
   );
 }
+
+type ProgressStyle = CSSProperties & {
+  '--progress-color'?: string;
+};
+
+const getInitials = (name: string) => {
+  if (!name) return '';
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const getPerformanceColor = (pct: number) => {
+  if (pct <= 20) return '#FF0000';
+  if (pct <= 40) return '#FF6600';
+  if (pct <= 60) return '#FFCC00';
+  if (pct <= 80) return '#99CC00';
+  if (pct <= 100) return '#00CC00';
+  return '#009900';
+};
 
 function KpiCard({
   title,
@@ -918,15 +936,22 @@ function RankingList({
             {data.map(ranking => (
               <div key={ranking.user_id} className="flex items-center justify-between rounded-xl border px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="font-semibold">
+                  <Badge variant="outline" className="font-semibold px-1.5 h-6 min-w-[2rem] flex justify-center text-[10px]">
                     #{ranking.rank}
                   </Badge>
+                  <Avatar className="h-8 w-8">
+                    {ranking.avatar_url ? (
+                      <AvatarImage src={ranking.avatar_url} alt={ranking.full_name} />
+                    ) : (
+                      <AvatarFallback className="text-[10px]">{getInitials(ranking.full_name)}</AvatarFallback>
+                    )}
+                  </Avatar>
                   <div>
-                    <p className="font-medium leading-tight">{ranking.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
+                    <p className="font-medium text-sm leading-tight">{ranking.full_name}</p>
+                    <p className="text-[10px] text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
                   </div>
                 </div>
-                <span className="font-medium">{ranking.result_pct}%</span>
+                <span className="font-medium text-sm">{ranking.result_pct}%</span>
               </div>
             ))}
           </div>
