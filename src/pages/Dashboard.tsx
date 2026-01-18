@@ -751,8 +751,8 @@ export default function Dashboard() {
                       .map((objective, index) => (
                         <div key={index} className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="font-bold text-base">{objective.objective_title}</span>
-                            <span className="font-bold text-base">{objective.result_pct}%</span>
+                            <span className="font-medium">{objective.objective_title}</span>
+                            <span className="font-medium text-muted-foreground">{objective.result_pct}%</span>
                           </div>
                           <Progress
                             value={objective.result_pct}
@@ -785,8 +785,8 @@ export default function Dashboard() {
                       .sort((a, b) => b.result_pct - a.result_pct)
                       .map((objective, index) => (
                         <div key={index} className="flex items-center justify-between rounded-lg border p-4">
-                          <span className="font-bold text-base">{objective.objective_title}</span>
-                          <span className="font-bold text-base text-primary">
+                          <span className="font-medium text-sm">{objective.objective_title}</span>
+                          <span className="font-medium text-sm text-primary">
                             {objective.kr_count}
                           </span>
                         </div>
@@ -818,7 +818,7 @@ export default function Dashboard() {
                         {okr.code && <span className="text-xs text-muted-foreground">{okr.code}</span>}
                         <span className="font-medium">{okr.title}</span>
                       </div>
-                      <span className="font-semibold">{okr.result_pct}%</span>
+                      <span className="font-medium">{okr.result_pct}%</span>
                     </div>
                     <Progress
                       value={okr.result_pct}
@@ -898,7 +898,7 @@ function RankingList({
                     <p className="text-xs text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
                   </div>
                 </div>
-                <span className="font-semibold">{ranking.result_pct}%</span>
+                <span className="font-medium">{ranking.result_pct}%</span>
               </div>
             ))}
           </div>
