@@ -64,6 +64,7 @@ interface OKRRanking {
   title: string;
   result_pct: number;
   owner_name: string | null;
+  owner_sector: string | null;
 }
 
 export default function Dashboard() {
@@ -324,7 +325,7 @@ export default function Dashboard() {
 
     let query = supabase
       .from('key_results')
-      .select('title, code, percent_kr')
+      .select('title, code, percent_kr, user_id')
       .eq('company_id', companyId)
       .eq('quarter_id', quarterId)
       .order('percent_kr', { ascending: false });
@@ -337,12 +338,25 @@ export default function Dashboard() {
 
     if (!krs || krs.length === 0) return [];
 
-    return krs.map(kr => ({
-      code: kr.code,
-      title: kr.title,
-      result_pct: Math.round(kr.percent_kr ?? 0),
-      owner_name: userProfile?.full_name ?? null,
-    }));
+    // Busca os perfis dos donos dos KRs
+    const ownerIds = Array.from(new Set(krs.map(kr => kr.user_id).filter(Boolean)));
+    const { data: owners } = await supabase
+      .from('profiles')
+      .select('id, full_name, sector')
+      .in('id', ownerIds);
+
+    const ownersMap = new Map(owners?.map(o => [o.id, o]) || []);
+
+    return krs.map(kr => {
+      const owner = ownersMap.get(kr.user_id);
+      return {
+        code: kr.code,
+        title: kr.title,
+        result_pct: Math.round(kr.percent_kr ?? 0),
+        owner_name: owner?.full_name ?? null,
+        owner_sector: owner?.sector ?? null,
+      };
+    });
   };
 
   useEffect(() => {
@@ -816,7 +830,14 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex flex-col">
                         {okr.code && <span className="text-xs text-muted-foreground">{okr.code}</span>}
-                        <span className="font-medium">{okr.title}</span>
+                        <span className="font-medium">
+                          {okr.title}
+                          {okr.owner_name && (
+                            <span className="ml-2 text-xs text-muted-foreground font-normal">
+                              - {okr.owner_name} ({okr.owner_sector ?? 'Sem setor'})
+                            </span>
+                          )}
+                        </span>
                       </div>
                       <span className="font-medium">{okr.result_pct}%</span>
                     </div>
