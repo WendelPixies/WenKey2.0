@@ -325,7 +325,7 @@ export default function Dashboard() {
 
     let query = supabase
       .from('key_results')
-      .select('title, code, percent_kr, user_id')
+      .select('title, code, percent_kr, user_id, objectives(user_id)')
       .eq('company_id', companyId)
       .eq('quarter_id', quarterId)
       .order('percent_kr', { ascending: false });
@@ -338,8 +338,12 @@ export default function Dashboard() {
 
     if (!krs || krs.length === 0) return [];
 
-    // Busca os perfis dos donos dos KRs
-    const ownerIds = Array.from(new Set(krs.map(kr => kr.user_id).filter(Boolean)));
+    // Busca os perfis dos donos dos KRs (priorizando o dono do Objetivo)
+    const ownerIds = Array.from(new Set(krs.map(kr => {
+      const obj = kr.objectives as any;
+      return (obj ? obj.user_id : null) || kr.user_id;
+    }).filter(Boolean)));
+
     const { data: owners } = await supabase
       .from('profiles')
       .select('id, full_name, sector')
@@ -348,7 +352,10 @@ export default function Dashboard() {
     const ownersMap = new Map(owners?.map(o => [o.id, o]) || []);
 
     return krs.map(kr => {
-      const owner = ownersMap.get(kr.user_id);
+      const obj = kr.objectives as any;
+      const ownerId = (obj ? obj.user_id : null) || kr.user_id;
+      const owner = ownersMap.get(ownerId);
+
       return {
         code: kr.code,
         title: kr.title,
