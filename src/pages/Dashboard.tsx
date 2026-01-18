@@ -706,7 +706,7 @@ export default function Dashboard() {
                   {topThreeRankings.map(ranking => (
                     <div key={ranking.user_id} className="flex items-center justify-between rounded-2xl border p-4">
                       <div className="flex items-center gap-3">
-                        <Badge variant="secondary" className="text-lg font-semibold">
+                        <Badge variant="outline" className="font-normal px-2 py-1 flex justify-center text-sm">
                           #{ranking.rank}
                         </Badge>
                         <Avatar className="h-12 w-12">
@@ -717,11 +717,11 @@ export default function Dashboard() {
                           )}
                         </Avatar>
                         <div>
-                          <p className="font-semibold leading-tight">{ranking.full_name}</p>
+                          <p className="text-base font-normal leading-tight">{ranking.full_name}</p>
                           <p className="text-sm text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
                         </div>
                       </div>
-                      <span className="text-lg font-bold">{ranking.result_pct}%</span>
+                      <span className="text-base font-normal">{ranking.result_pct}%</span>
                     </div>
                   ))}
                 </div>
@@ -757,9 +757,9 @@ export default function Dashboard() {
                       .sort((a, b) => b.result_pct - a.result_pct)
                       .map((objective, index) => (
                         <div key={index} className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">{objective.objective_title}</span>
-                            <span className="font-medium text-muted-foreground">{objective.result_pct}%</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-base font-normal">{objective.objective_title}</span>
+                            <span className="text-base font-normal text-muted-foreground">{objective.result_pct}%</span>
                           </div>
                           <Progress
                             value={objective.result_pct}
@@ -792,8 +792,8 @@ export default function Dashboard() {
                       .sort((a, b) => b.result_pct - a.result_pct)
                       .map((objective, index) => (
                         <div key={index} className="flex items-center justify-between rounded-lg border p-4">
-                          <span className="font-medium text-sm">{objective.objective_title}</span>
-                          <span className="font-medium text-sm text-primary">
+                          <span className="text-base font-normal">{objective.objective_title}</span>
+                          <span className="text-base font-normal text-primary">
                             {objective.kr_count}
                           </span>
                         </div>
@@ -820,13 +820,13 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {okrRankings.map((okr, index) => (
                   <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         {okr.code && <span className="text-xs text-muted-foreground">{okr.code}</span>}
-                        <span className="font-medium">
+                        <span className="text-base font-normal">
                           {okr.title}
                           {okr.owner_name && (
-                            <span className="ml-2 text-xs text-muted-foreground font-normal inline-flex items-center gap-1.5 align-middle">
+                            <span className="ml-2 text-sm text-muted-foreground font-normal inline-flex items-center gap-1.5 align-middle">
                               -
                               <Avatar className="h-4 w-4">
                                 {okr.owner_avatar_url ? (
@@ -840,7 +840,7 @@ export default function Dashboard() {
                           )}
                         </span>
                       </div>
-                      <span className="font-medium">{okr.result_pct}%</span>
+                      <span className="text-base font-normal">{okr.result_pct}%</span>
                     </div>
                     <Progress
                       value={okr.result_pct}
@@ -897,8 +897,8 @@ function KpiCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <h3 className="text-2xl font-bold">{value}</h3>
+          <p className="text-base text-muted-foreground">{title}</p>
+          <h3 className="text-2xl font-normal">{value}</h3>
         </div>
         <div className="rounded-full bg-muted p-3 text-primary">{icon}</div>
       </CardHeader>
@@ -936,7 +936,7 @@ function RankingList({
             {data.map(ranking => (
               <div key={ranking.user_id} className="flex items-center justify-between rounded-xl border px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="font-semibold px-1.5 h-6 min-w-[2rem] flex justify-center text-[10px]">
+                  <Badge variant="outline" className="font-normal px-1.5 h-6 min-w-[2rem] flex justify-center text-[11px]">
                     #{ranking.rank}
                   </Badge>
                   <Avatar className="h-8 w-8">
@@ -947,11 +947,11 @@ function RankingList({
                     )}
                   </Avatar>
                   <div>
-                    <p className="font-medium text-sm leading-tight">{ranking.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
+                    <p className="text-base font-normal leading-tight">{ranking.full_name}</p>
+                    <p className="text-sm text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
                   </div>
                 </div>
-                <span className="font-medium text-sm">{ranking.result_pct}%</span>
+                <span className="text-base font-normal">{ranking.result_pct}%</span>
               </div>
             ))}
           </div>

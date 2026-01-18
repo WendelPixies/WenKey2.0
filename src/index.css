@@ -129,6 +129,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground text-base font-normal antialiased;
+    font-size: 16px;
   }
 }

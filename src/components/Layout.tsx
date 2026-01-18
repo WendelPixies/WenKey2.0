@@ -115,8 +115,8 @@ export function Layout({ children }: LayoutProps) {
                 )}
                 onClick={() => navigate(item.path)}
               >
-                <Icon className="w-5 h-5" />
-                {!collapsed && item.label}
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && <span className="text-base font-normal">{item.label}</span>}
               </Button>
             );
           })}
@@ -135,12 +135,12 @@ export function Layout({ children }: LayoutProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="text-center space-y-0.5">
-                <p className="text-sm font-medium text-sidebar-foreground">{profile.full_name}</p>
+                <p className="text-base font-normal text-sidebar-foreground">{profile.full_name}</p>
                 {profile.position && (
-                  <p className="text-xs text-sidebar-foreground/60">{profile.position}</p>
+                  <p className="text-sm text-sidebar-foreground/60">{profile.position}</p>
                 )}
                 {company && (
-                  <p className="text-xs text-sidebar-foreground/60">{company.name}</p>
+                  <p className="text-sm text-sidebar-foreground/60">{company.name}</p>
                 )}
                 <p className="sr-only">Wenkey</p>
               </div>
@@ -160,12 +160,15 @@ export function Layout({ children }: LayoutProps) {
             </div>
           )}
           <Button
-            variant="ghost"
-            className={cn('w-full text-sidebar-foreground hover:bg-sidebar-accent', collapsed ? 'justify-center' : 'justify-start gap-3')}
+            variant="outline"
+            className={cn(
+              'w-full bg-transparent border-2 border-primary text-sidebar-foreground hover:bg-primary/10 hover:text-sidebar-foreground transition-all rounded-full',
+              collapsed ? 'px-0 justify-center' : 'justify-start gap-3'
+            )}
             onClick={signOut}
           >
             <LogOut className="w-5 h-5" />
-            {!collapsed && 'Sair'}
+            {!collapsed && <span className="text-base font-normal">Sair</span>}
           </Button>
         </div>
       </aside>
