@@ -746,19 +746,21 @@ export default function Dashboard() {
                   <p className="text-center text-muted-foreground">Nenhum objetivo disponível.</p>
                 ) : (
                   <div className="space-y-4">
-                    {objectiveRankings.map((objective, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{objective.objective_title}</span>
-                          <span className="text-muted-foreground">{objective.result_pct}%</span>
+                    {objectiveRankings
+                      .sort((a, b) => b.result_pct - a.result_pct)
+                      .map((objective, index) => (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-bold text-base">{objective.objective_title}</span>
+                            <span className="font-bold text-base">{objective.result_pct}%</span>
+                          </div>
+                          <Progress
+                            value={objective.result_pct}
+                            className="h-2"
+                            style={getProgressStyle(objective.result_pct)}
+                          />
                         </div>
-                        <Progress
-                          value={objective.result_pct}
-                          className="h-2"
-                          style={getProgressStyle(objective.result_pct)}
-                        />
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </CardContent>
@@ -780,16 +782,13 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-3">
                     {objectiveRankings
-                      .sort((a, b) => b.kr_count - a.kr_count)
+                      .sort((a, b) => b.result_pct - a.result_pct)
                       .map((objective, index) => (
-                        <div key={index} className="flex items-center justify-between rounded-lg border p-3">
-                          <span className="font-medium">{objective.objective_title}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">_______</span>
-                            <Badge variant="secondary" className="font-bold">
-                              {objective.kr_count}
-                            </Badge>
-                          </div>
+                        <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                          <span className="font-bold text-base">{objective.objective_title}</span>
+                          <span className="font-bold text-base text-primary">
+                            {objective.kr_count}
+                          </span>
                         </div>
                       ))}
                   </div>
