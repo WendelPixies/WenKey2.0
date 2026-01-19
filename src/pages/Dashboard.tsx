@@ -548,10 +548,10 @@ export default function Dashboard() {
         const rankings = await calculateUserRankingsFromResults(selectedCompanyId!, activeQuarter.id);
         setUserRankings(rankings);
 
-        const objRanking = await calculateObjectiveRankings(selectedCompanyId!, activeQuarter.id, userIdFilter);
+        const objRanking = await calculateObjectiveRankings(selectedCompanyId!, activeQuarter.id, null);
         setObjectiveRankings(objRanking);
 
-        const okrRanking = await calculateOKRRankings(selectedCompanyId!, activeQuarter.id, userIdFilter);
+        const okrRanking = await calculateOKRRankings(selectedCompanyId!, activeQuarter.id, null);
         setOKRRankings(okrRanking);
 
         const perf = await calculateQuarterPerformanceFromResults(appState, role === 'admin' ? null : user!.id);
