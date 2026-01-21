@@ -605,15 +605,15 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm text-black">{toTitleCase('Dashboard')}</p>
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-center">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{toTitleCase('Dashboard')}</p>
             <h1 className="text-3xl font-bold tracking-tight text-black">{toTitleCase('Bem-vindo')}, {toTitleCase(userProfile?.full_name ?? 'Usuário')}</h1>
-            <p className="text-black">
+            <p className="text-muted-foreground">
               {toTitleCase('Acompanhe a evolução dos objetivos e resultados-chave da empresa.')}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border p-1 pr-6 min-w-[320px]">
+          <div className="bg-white rounded-xl shadow-sm border w-full h-full">
             <ActiveQuarterInfo quarter={appState.active_quarter} />
           </div>
         </div>
