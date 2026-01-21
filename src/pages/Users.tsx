@@ -44,6 +44,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
+import { toTitleCase } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -71,7 +72,7 @@ interface CompanyMember {
 }
 
 export default function Users() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { isAdmin } = useUserRole();
   const [users, setUsers] = useState<Profile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -396,7 +397,9 @@ export default function Users() {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesCompany = filterCompanyId === 'all' || user.company_id === filterCompanyId;
+    const effectiveCompanyId = isAdmin ? filterCompanyId : profile?.company_id;
+    const matchesCompany = (isAdmin && filterCompanyId === 'all') ||
+      user.company_id === effectiveCompanyId;
 
     // Status is 'active' only if is_active is true AND company_id exists
     const isUserActive = user.is_active && user.company_id;
@@ -413,11 +416,11 @@ export default function Users() {
     <Layout>
       <div className="space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
+          <h1 className="text-3xl font-bold">{toTitleCase('Gestão de Usuários')}</h1>
           {isAdmin && (
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Novo Usuário
+              {toTitleCase('Novo Usuário')}
             </Button>
           )}
         </div>
@@ -425,19 +428,19 @@ export default function Users() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Lista de Usuários</CardTitle>
+              <CardTitle>{toTitleCase('Lista de Usuários')}</CardTitle>
               {isAdmin && (
                 <div className="flex gap-4 w-full max-w-2xl">
                   <div className="flex-1">
                     <Select value={filterCompanyId} onValueChange={setFilterCompanyId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por empresa" />
+                        <SelectValue placeholder={toTitleCase('Filtrar por empresa')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todas as empresas</SelectItem>
                         {companies.filter(c => c.id).map(company => (
                           <SelectItem key={company.id} value={company.id}>
-                            {company.name}
+                            {toTitleCase(company.name)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -446,7 +449,7 @@ export default function Users() {
                   <div className="flex-1">
                     <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por status" />
+                        <SelectValue placeholder={toTitleCase('Filtrar por status')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os status</SelectItem>
@@ -461,18 +464,18 @@ export default function Users() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-muted-foreground">Carregando...</p>
+              <p className="text-muted-foreground">{toTitleCase('Carregando...')}</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Setor</TableHead>
-                    <TableHead>Permissão</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead>{toTitleCase('Usuário')}</TableHead>
+                    <TableHead>{toTitleCase('Email')}</TableHead>
+                    <TableHead>{toTitleCase('Empresa')}</TableHead>
+                    <TableHead>{toTitleCase('Setor')}</TableHead>
+                    <TableHead>{toTitleCase('Permissão')}</TableHead>
+                    <TableHead>{toTitleCase('Status')}</TableHead>
+                    <TableHead className="text-right">{toTitleCase('Ações')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -484,15 +487,15 @@ export default function Users() {
                             <AvatarImage src={user.avatar_url || undefined} />
                             <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{user.full_name}</span>
+                          <span className="font-medium">{toTitleCase(user.full_name)}</span>
                         </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{getUserCompany(user)}</TableCell>
+                      <TableCell>{toTitleCase(getUserCompany(user))}</TableCell>
                       <TableCell>{user.sector || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={user.permission_type === 'admin' ? 'default' : 'secondary'}>
-                          {user.permission_type}
+                          {toTitleCase(user.permission_type)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -509,7 +512,7 @@ export default function Users() {
                                 variant={isUserActive ? 'default' : 'secondary'}
                                 className={!isUserActive ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200' : ''}
                               >
-                                {isUserActive ? 'Ativo' : 'Pendente'}
+                                {isUserActive ? toTitleCase('Ativo') : toTitleCase('Pendente')}
                               </Badge>
                             );
                           })()}

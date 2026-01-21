@@ -1,6 +1,7 @@
+/// <reference lib="deno.ns" />
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1'
-import { JWT } from 'https://esm.sh/google-auth-library@9.7.0'
+import { createClient } from '@supabase/supabase-js'
+import { JWT } from 'google-auth-library'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -11,7 +12,7 @@ interface RequestBody {
     quarter_id: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -22,7 +23,18 @@ Deno.serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        const { quarter_id } = await req.json() as RequestBody;
+        let body: RequestBody;
+        try {
+            const json = await req.json();
+            body = json as RequestBody;
+        } catch (_) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid request body. JSON required.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const { quarter_id } = body;
 
         if (!quarter_id) {
             throw new Error('Quarter ID is required');
@@ -95,17 +107,29 @@ Deno.serve(async (req) => {
         let createdCount = 0;
 
         for (const checkin of checkins) {
-            const date = checkin.checkin_date || checkin.occurred_at;
-            if (!date) continue;
+            const dateValue = checkin.checkin_date || checkin.occurred_at;
+            if (!dateValue) continue;
+
+            // Ensure we use the date part only to avoid timezone shifts
+            const dateOnly = typeof dateValue === 'string' && dateValue.includes('T')
+                ? dateValue.split('T')[0]
+                : dateValue;
+
+            const startDate = new Date(dateOnly + 'T00:00:00');
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+
+            const startStr = startDate.toISOString().split('T')[0];
+            const endStr = endDate.toISOString().split('T')[0];
 
             const event = {
                 summary: `Check-in de OKR - ${quarter.name}`,
                 description: `Check-in programado para o quarter ${quarter.name}. Por favor, atualize seus resultados.`,
                 start: {
-                    date: date, // All-day event
+                    date: startStr,
                 },
                 end: {
-                    date: date, // For all-day events, end is usually the date (inclusive?) check google api
+                    date: endStr,
                 },
                 attendees: attendees,
                 reminders: {
@@ -119,7 +143,7 @@ Deno.serve(async (req) => {
 
             try {
                 await client.request({
-                    url: `https://www.googleapis.com/calendar/v3/calendars/primary/events`,
+                    url: `https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all`,
                     method: 'POST',
                     data: event,
                 });
@@ -136,7 +160,7 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: (error as Error).message }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }

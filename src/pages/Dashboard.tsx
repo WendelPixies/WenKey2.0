@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Target, Calendar, TrendingUp, Award, Trophy } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, toTitleCase } from '@/lib/utils';
+import { ActiveQuarterInfo } from '@/components/ActiveQuarterInfo';
 
 interface AppState {
   company_id: string;
@@ -604,43 +605,43 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Dashboard</p>
-            <h1 className="text-3xl font-bold tracking-tight">Bem-vindo, {userProfile?.full_name ?? 'Usuário'}</h1>
-            <p className="text-muted-foreground">
-              Acompanhe a evolução dos objetivos e resultados-chave da empresa.
+            <p className="text-sm text-black">{toTitleCase('Dashboard')}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-black">{toTitleCase('Bem-vindo')}, {toTitleCase(userProfile?.full_name ?? 'Usuário')}</h1>
+            <p className="text-black">
+              {toTitleCase('Acompanhe a evolução dos objetivos e resultados-chave da empresa.')}
             </p>
           </div>
-          <Badge variant="secondary" className="w-fit px-4 py-2 text-sm">
-            Quarter Ativo: {appState.active_quarter.name}
-          </Badge>
+          <div className="bg-white rounded-xl shadow-sm border p-1 pr-6 min-w-[320px]">
+            <ActiveQuarterInfo quarter={appState.active_quarter} />
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard
-            title="Objetivos Ativos"
+            title={toTitleCase('Objetivos Ativos')}
             icon={<Target className="h-5 w-5" />}
             value={activeObjectivesCount}
-            description="Objetivos acompanhados neste quarter"
+            description={toTitleCase('Objetivos acompanhados neste quarter')}
           />
           <KpiCard
-            title="OKRs Ativos"
+            title={toTitleCase('OKRs Ativos')}
             icon={<Calendar className="h-5 w-5" />}
             value={activeOKRsCount}
-            description="Key Results com acompanhamento"
+            description={toTitleCase('Key Results com acompanhamento')}
           />
           <KpiCard
-            title="Média do Quarter"
+            title={toTitleCase('Média do Quarter')}
             icon={<TrendingUp className="h-5 w-5" />}
             value={`${currentQuarterProgress}%`}
-            description="Progresso consolidado do quarter"
+            description={toTitleCase('Progresso consolidado do quarter')}
           />
           <KpiCard
-            title="Colaboradores ranqueados"
+            title={toTitleCase('Colaboradores ranqueados')}
             icon={<Award className="h-5 w-5" />}
             value={userRankings.length}
-            description="Participantes com resultados enviados"
+            description={toTitleCase('Participantes com resultados enviados')}
           />
         </div>
 
@@ -698,7 +699,7 @@ export default function Dashboard() {
                 Colaboradores com melhor desempenho no quarter atual.
               </p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {topThreeRankings.length === 0 ? (
                 <p className="text-center text-muted-foreground">Nenhum resultado disponível.</p>
               ) : (
@@ -732,9 +733,9 @@ export default function Dashboard() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <RankingList
-            title="Ranking completo"
+            title={toTitleCase('Ranking completo')}
             icon={<Trophy className="h-4 w-4" />}
-            emptyMessage="Nenhum colaborador posicionado"
+            emptyMessage={toTitleCase('Nenhum colaborador posicionado')}
             data={userRankings}
           />
           <div className="space-y-4">
@@ -742,13 +743,13 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="h-5 w-5" />
-                  Atingimento por Objetivo
+                  {toTitleCase('Atingimento por Objetivo')}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Percentual médio de atingimento por objetivo na empresa.
+                <p className="text-base text-muted-foreground">
+                  {toTitleCase('Percentual médio de atingimento por objetivo na empresa.')}
                 </p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {objectiveRankings.length === 0 ? (
                   <p className="text-center text-muted-foreground">Nenhum objetivo disponível.</p>
                 ) : (
@@ -758,7 +759,7 @@ export default function Dashboard() {
                       .map((objective, index) => (
                         <div key={index} className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-base font-normal">{objective.objective_title}</span>
+                            <span className="text-base font-normal">{toTitleCase(objective.objective_title)}</span>
                             <span className="text-base font-normal text-muted-foreground">{objective.result_pct}%</span>
                           </div>
                           <Progress
@@ -777,22 +778,22 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Quantidade de OKRs por Objetivo
+                  {toTitleCase('Quantidade de OKRs por Objetivo')}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Número de Key Results associados a cada objetivo.
+                <p className="text-base text-muted-foreground">
+                  {toTitleCase('Número de Key Results associados a cada objetivo.')}
                 </p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {objectiveRankings.length === 0 ? (
                   <p className="text-center text-muted-foreground">Nenhum objetivo disponível.</p>
                 ) : (
                   <div className="space-y-3">
                     {objectiveRankings
-                      .sort((a, b) => b.result_pct - a.result_pct)
+                      .sort((a, b) => b.kr_count - a.kr_count)
                       .map((objective, index) => (
                         <div key={index} className="flex items-center justify-between rounded-lg border p-4">
-                          <span className="text-base font-normal">{objective.objective_title}</span>
+                          <span className="text-base font-normal">{toTitleCase(objective.objective_title)}</span>
                           <span className="text-base font-normal text-primary">
                             {objective.kr_count}
                           </span>
@@ -809,11 +810,11 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              OKRs em Destaque
+              {toTitleCase('OKRs em Destaque')}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Key Results ordenados pelo percentual de atingimento.</p>
+            <p className="text-base text-muted-foreground">{toTitleCase('Key Results ordenados pelo percentual de atingimento.')}</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[500px] overflow-y-auto pr-2 custom-scrollbar">
             {okrRankings.length === 0 ? (
               <p className="text-center text-muted-foreground">Nenhum dado cadastrado.</p>
             ) : (
@@ -824,18 +825,18 @@ export default function Dashboard() {
                       <div className="flex flex-col">
                         {okr.code && <span className="text-xs text-muted-foreground">{okr.code}</span>}
                         <span className="text-base font-normal">
-                          {okr.title}
+                          {toTitleCase(okr.title)}
                           {okr.owner_name && (
                             <span className="ml-2 text-sm text-muted-foreground font-normal inline-flex items-center gap-1.5 align-middle">
                               -
                               <Avatar className="h-4 w-4">
                                 {okr.owner_avatar_url ? (
-                                  <AvatarImage src={okr.owner_avatar_url} alt={okr.owner_name} />
+                                  <AvatarImage src={okr.owner_avatar_url} alt={okr.owner_name || ''} />
                                 ) : (
-                                  <AvatarFallback className="text-[8px]">{getInitials(okr.owner_name)}</AvatarFallback>
+                                  <AvatarFallback className="text-[8px]">{getInitials(okr.owner_name || '')}</AvatarFallback>
                                 )}
                               </Avatar>
-                              {okr.owner_name} ({okr.owner_sector ?? 'Sem setor'})
+                              {toTitleCase(okr.owner_name)} ({toTitleCase(okr.owner_sector ?? 'Sem setor')})
                             </span>
                           )}
                         </span>
@@ -897,13 +898,13 @@ function KpiCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <p className="text-base text-muted-foreground">{title}</p>
-          <h3 className="text-2xl font-normal">{value}</h3>
+          <p className="text-base text-black">{title}</p>
+          <h3 className="text-2xl font-normal text-black">{value}</h3>
         </div>
         <div className="rounded-full bg-muted p-3 text-primary">{icon}</div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm text-black">{description}</p>
       </CardContent>
     </Card>
   );
@@ -928,7 +929,7 @@ function RankingList({
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="h-[400px] overflow-y-auto pr-2 custom-scrollbar">
         {data.length === 0 ? (
           <p className="text-center text-muted-foreground">{emptyMessage}</p>
         ) : (
@@ -947,8 +948,8 @@ function RankingList({
                     )}
                   </Avatar>
                   <div>
-                    <p className="text-base font-normal leading-tight">{ranking.full_name}</p>
-                    <p className="text-sm text-muted-foreground">{ranking.sector ?? 'Sem setor'}</p>
+                    <p className="text-base font-normal leading-tight text-black">{toTitleCase(ranking.full_name)}</p>
+                    <p className="text-sm text-black">{toTitleCase(ranking.sector ?? 'Sem setor')}</p>
                   </div>
                 </div>
                 <span className="text-base font-normal">{ranking.result_pct}%</span>

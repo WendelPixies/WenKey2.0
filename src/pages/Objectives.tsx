@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { toTitleCase } from '@/lib/utils';
 
 interface Quarter {
   id: string;
@@ -422,7 +423,7 @@ export default function Objectives() {
     };
 
     const statusInfo = statusMap[status] || { label: status, variant: 'secondary' as const };
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+    return <Badge variant={statusInfo.variant}>{toTitleCase(statusInfo.label)}</Badge>;
   };
 
   const handleDeleteKrConfirm = async () => {
@@ -498,7 +499,7 @@ export default function Objectives() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Objetivos e Key Results</h1>
+          <h1 className="text-3xl font-bold">{toTitleCase('Objetivos e Key Results')}</h1>
           {isAdmin && profile && selectedQuarterId && (
             <CreateObjectiveDialog
               onSuccess={loadObjectives}
@@ -511,24 +512,24 @@ export default function Objectives() {
         {/* Filtros */}
         <Card>
           <CardHeader>
-            <CardTitle>Filtros</CardTitle>
+            <CardTitle>{toTitleCase('Filtros')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               {/* Dropdown de Empresa - PRIMEIRO */}
               <div className="space-y-2">
-                <Label htmlFor="company-select">Empresa</Label>
+                <Label htmlFor="company-select">{toTitleCase('Empresa')}</Label>
                 <Select
                   value={filterCompanyId}
                   onValueChange={setFilterCompanyId}
                 >
                   <SelectTrigger id="company-select" className="bg-background">
-                    <SelectValue placeholder="Selecione uma empresa" />
+                    <SelectValue placeholder={toTitleCase('Selecione uma empresa')} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
                     {companies.map(comp => (
                       <SelectItem key={comp.id} value={comp.id}>
-                        {comp.name}
+                        {toTitleCase(comp.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -537,19 +538,19 @@ export default function Objectives() {
 
               {/* Dropdown de Quarter - SEGUNDO (depende da empresa) */}
               <div className="space-y-2">
-                <Label htmlFor="quarter-select">Quarter</Label>
+                <Label htmlFor="quarter-select">{toTitleCase('Quarter')}</Label>
                 <Select
                   value={selectedQuarterId}
                   onValueChange={setSelectedQuarterId}
                   disabled={!filterCompanyId || quarters.length === 0}
                 >
                   <SelectTrigger id="quarter-select" className="bg-background">
-                    <SelectValue placeholder="Selecione um quarter" />
+                    <SelectValue placeholder={toTitleCase('Selecione um quarter')} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
                     {quarters.map(quarter => (
                       <SelectItem key={quarter.id} value={quarter.id}>
-                        {quarter.name}
+                        {toTitleCase(quarter.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -558,10 +559,10 @@ export default function Objectives() {
 
               {/* Dropdown de Usuário - TERCEIRO (depende da empresa) */}
               <div className="space-y-2">
-                <Label htmlFor="user-select">Usuário</Label>
+                <Label htmlFor="user-select">{toTitleCase('Usuário')}</Label>
                 {isUser ? (
                   <div className="h-10 px-3 py-2 rounded-md border bg-muted/40 flex items-center text-sm text-muted-foreground">
-                    {profile?.full_name || 'Usuário atual'}
+                    {toTitleCase(profile?.full_name || 'Usuário atual')}
                   </div>
                 ) : (
                   <Select
@@ -570,12 +571,12 @@ export default function Objectives() {
                     disabled={!filterCompanyId || users.length === 0}
                   >
                     <SelectTrigger id="user-select" className="bg-background">
-                      <SelectValue placeholder="Selecione um usuário" />
+                      <SelectValue placeholder={toTitleCase('Selecione um usuário')} />
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
                       {users.map(user => (
                         <SelectItem key={user.id} value={user.id}>
-                          {user.full_name}
+                          {toTitleCase(user.full_name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -591,15 +592,15 @@ export default function Objectives() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5" />
-              Objetivos Cadastrados
+              {toTitleCase('Objetivos Cadastrados')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {objectives.length === 0 ? (
               <div className="text-center py-12">
                 <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground text-lg">
-                  Nenhum objetivo cadastrado ainda. Crie seu primeiro objetivo!
+                <p className="text-black text-lg">
+                  {toTitleCase('Nenhum objetivo cadastrado ainda. Crie seu primeiro objetivo!')}
                 </p>
               </div>
             ) : (
@@ -616,12 +617,12 @@ export default function Objectives() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 text-left space-y-2">
                               <div className="flex items-center gap-2">
-                                <CardTitle className="text-2xl">{objective.title}</CardTitle>
+                                <CardTitle className="text-2xl">{toTitleCase(objective.title)}</CardTitle>
                                 {getStatusBadge(objective.status)}
                               </div>
 
                               {objective.description && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-black">
                                   {objective.description}
                                 </p>
                               )}
@@ -629,7 +630,7 @@ export default function Objectives() {
                               {/* Progresso do Objetivo */}
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm text-muted-foreground">Progresso</span>
+                                  <span className="text-sm text-black">{toTitleCase('Progresso')}</span>
                                   <span className="text-2xl font-bold">{objective.progress}%</span>
                                 </div>
                                 <Progress
@@ -638,8 +639,8 @@ export default function Objectives() {
                                 />
                               </div>
 
-                              <div className="text-sm text-muted-foreground">
-                                {objective.key_results.length} {objective.key_results.length === 1 ? 'Key Result' : 'Key Results'}
+                              <div className="text-sm text-black">
+                                {objective.key_results.length} {toTitleCase(objective.key_results.length === 1 ? 'Key Result' : 'Key Results')}
                               </div>
                             </div>
 
@@ -702,37 +703,35 @@ export default function Objectives() {
                                         <div className="text-lg font-semibold">
                                           {kr.code && <span className="text-primary">{kr.code}</span>}
                                           {kr.code && ' - '}
-                                          {kr.title}
+                                          {toTitleCase(kr.title)}
                                         </div>
 
-                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                        <div className="flex items-center gap-4 text-sm text-black">
                                           <div>
-                                            <span className="font-medium">Atual:</span> {kr.current}
+                                            <span className="font-medium text-black">{toTitleCase('Atual')}:</span> {kr.current}
                                           </div>
                                           {kr.target !== null && (
                                             <div>
-                                              <span className="font-medium">Meta:</span> {kr.target}
+                                              <span className="font-medium text-black">{toTitleCase('Meta')}:</span> {kr.target}
                                             </div>
                                           )}
                                           {kr.owner_name && (
                                             <div>
-                                              <span className="font-medium">Responsável:</span> {kr.owner_name}
+                                              <span className="font-medium">{toTitleCase('Responsável')}:</span> {toTitleCase(kr.owner_name)}
                                             </div>
                                           )}
                                         </div>
                                       </div>
 
                                       <div className="flex-shrink-0 text-right flex items-center gap-2">
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-lg font-bold"
+                                        <div
+                                          className="text-xl font-bold px-2 py-1 rounded-md"
                                           style={{
-                                            backgroundColor: getProgressColor(kr.progress) + '20',
-                                            color: getProgressColor(kr.progress)
+                                            color: 'black'
                                           }}
                                         >
                                           {kr.progress}%
-                                        </Badge>
+                                        </div>
                                         {isAdmin && (
                                           <>
                                             <EditKRDialog

@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { toTitleCase } from '@/lib/utils';
 
 interface Quarter {
   id: string;
@@ -1238,14 +1239,14 @@ export default function KRCheckins() {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Check-ins de Key Results</h1>
+          <h1 className="text-3xl font-bold">{toTitleCase('Check-ins de Key Results')}</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* PRIMEIRO: Filtro de Empresa */}
           {role === 'admin' && (
             <div>
-              <Label htmlFor="company">Empresa</Label>
+              <Label htmlFor="company">{toTitleCase('Empresa')}</Label>
               <Select
                 value={filterCompanyId || 'all'}
                 onValueChange={(value) => {
@@ -1254,7 +1255,7 @@ export default function KRCheckins() {
                 }}
               >
                 <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Selecione uma empresa" />
+                  <SelectValue placeholder={toTitleCase('Selecione uma empresa')} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="all">Todas as empresas</SelectItem>
@@ -1262,7 +1263,7 @@ export default function KRCheckins() {
                     .filter((company) => company.id)
                     .map((company) => (
                       <SelectItem key={company.id} value={company.id}>
-                        {company.name}
+                        {toTitleCase(company.name)}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -1272,15 +1273,15 @@ export default function KRCheckins() {
 
           {/* SEGUNDO: Filtro de Quarter */}
           <div>
-            <Label htmlFor="quarter">Quarter</Label>
+            <Label htmlFor="quarter">{toTitleCase('Quarter')}</Label>
             <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
               <SelectTrigger className="bg-background">
-                <SelectValue placeholder="Selecione o quarter" />
+                <SelectValue placeholder={toTitleCase('Selecione o quarter')} />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
                 {quarters.map((quarter) => (
                   <SelectItem key={quarter.id} value={quarter.id}>
-                    {quarter.name}
+                    {toTitleCase(quarter.name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1290,14 +1291,14 @@ export default function KRCheckins() {
           {/* TERCEIRO: Filtro de Usuário */}
           {role === 'admin' && (
             <div>
-              <Label htmlFor="user">Usuário</Label>
+              <Label htmlFor="user">{toTitleCase('Usuário')}</Label>
               <Select
                 value={filterOwnerId || 'all'}
                 onValueChange={setFilterOwnerId}
                 disabled={!filterCompanyId || filterCompanyId === 'all'}
               >
                 <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Todos os usuários" />
+                  <SelectValue placeholder={toTitleCase('Todos os usuários')} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="all">Todos os usuários</SelectItem>
@@ -1305,7 +1306,7 @@ export default function KRCheckins() {
                     .filter((user) => user.id)
                     .map((user) => (
                       <SelectItem key={user.id} value={user.id}>
-                        {user.full_name}
+                        {toTitleCase(user.full_name)}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -1340,10 +1341,10 @@ export default function KRCheckins() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[60px] sticky left-0 bg-background z-10 text-primary font-semibold px-2">
-                        Código
+                        {toTitleCase('Código')}
                       </TableHead>
                       <TableHead className="w-[200px] sticky left-[60px] bg-background z-10 px-3">
-                        Key Result
+                        {toTitleCase('Key Result')}
                       </TableHead>
                       {quarterCheckins.map((checkin) => (
                         <TableHead
@@ -1370,7 +1371,7 @@ export default function KRCheckins() {
                         <TableRow className="bg-muted/50">
                           <TableCell colSpan={2} className="sticky left-0 bg-muted/50 z-10 px-2">
                             <div className="text-base font-bold text-primary uppercase py-2">
-                              {group.title}
+                              {toTitleCase(group.title)}
                             </div>
                           </TableCell>
                           {quarterCheckins.map((checkin) => {
@@ -1398,7 +1399,7 @@ export default function KRCheckins() {
                             </TableCell>
                             <TableCell className="sticky left-[60px] bg-background z-10 px-3 min-h-[140px] w-[140px]">
                               <div className="flex flex-col justify-center min-h-[140px]">
-                                <div className="text-sm font-medium uppercase whitespace-normal">{kr.title}</div>
+                                <div className="text-sm font-medium uppercase whitespace-normal">{toTitleCase(kr.title)}</div>
                                 <div className="text-xs text-muted-foreground mt-1 uppercase whitespace-nowrap">
                                   Tipo: {translateType(kr.type)} • Direção: {translateDirection(kr.direction)}
                                 </div>

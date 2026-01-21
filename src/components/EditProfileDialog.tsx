@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toTitleCase } from '@/lib/utils';
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -79,8 +80,8 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
       if (updateError) throw updateError;
 
       toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram salvas com sucesso.',
+        title: toTitleCase('Perfil atualizado'),
+        description: toTitleCase('Suas informações foram salvas com sucesso.'),
       });
 
       onProfileUpdated();
@@ -89,7 +90,7 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
       console.error('Erro ao atualizar perfil:', error);
       toast({
         title: 'Erro',
-        description: error.message || 'Não foi possível atualizar o perfil.',
+        description: toTitleCase(error.message || 'Não foi possível atualizar o perfil.'),
         variant: 'destructive',
       });
     } finally {
@@ -101,7 +102,7 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar Perfil</DialogTitle>
+          <DialogTitle>{toTitleCase('Editar Perfil')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="flex flex-col items-center gap-4">
@@ -111,25 +112,28 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
                 {fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col items-center gap-2">
-              <Label htmlFor="avatar" className="cursor-pointer">
-                <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors">
-                  <Upload className="w-4 h-4" />
-                  <span className="text-sm">Alterar foto</span>
-                </div>
-                <Input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
-              </Label>
+            <div className="flex flex-col items-center gap-4">
+              <Label className="text-sm font-medium">{toTitleCase('Foto do Perfil')}</Label>
+              <div className="relative group">
+                <Label htmlFor="avatar" className="cursor-pointer">
+                  <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">Alterar foto</span>
+                  </div>
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </Label>
+              </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fullName">Nome Completo</Label>
+            <Label htmlFor="fullName">{toTitleCase('Nome Completo')}</Label>
             <Input
               id="fullName"
               value={fullName}
@@ -145,16 +149,16 @@ export function EditProfileDialog({ open, onOpenChange, profile, onProfileUpdate
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
-            Cancelar
+            {toTitleCase('Cancelar')}
           </Button>
           <Button onClick={handleSave} disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
+                {toTitleCase('Salvando...')}
               </>
             ) : (
-              'Salvar'
+              toTitleCase('Salvar Alterações')
             )}
           </Button>
         </div>

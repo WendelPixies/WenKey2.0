@@ -22,7 +22,7 @@ All colors MUST be HSL.
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 221 83% 48%;
-    
+
     /* Secondary: Soft Purple Accent */
     --secondary: 250 60% 95%;
     --secondary-foreground: 221 83% 53%;
@@ -55,13 +55,13 @@ All colors MUST be HSL.
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(262 83% 58%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(220 20% 98%) 0%, hsl(220 20% 96%) 100%);
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-    
+
     /* Sidebar */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 220 20% 95%;
@@ -131,5 +131,29 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground text-base font-normal antialiased;
     font-size: 16px;
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 20px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 }

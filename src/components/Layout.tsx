@@ -20,7 +20,7 @@ import {
   History,
   Beaker
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, toTitleCase } from '@/lib/utils';
 import { CompanySelector } from './CompanySelector';
 import { EditProfileDialog } from './EditProfileDialog';
 
@@ -76,7 +76,7 @@ export function Layout({ children }: LayoutProps) {
             {!collapsed && (
               <div>
                 <h1 className="text-xl font-bold text-sidebar-foreground">Wenkey</h1>
-                <p className="text-xs text-sidebar-foreground/60">Gestão de OKRs</p>
+                <p className="text-xs text-sidebar-foreground/60">{toTitleCase('Gestão de OKRs')}</p>
               </div>
             )}
             <Button
@@ -116,7 +116,7 @@ export function Layout({ children }: LayoutProps) {
                 onClick={() => navigate(item.path)}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="text-base font-normal">{item.label}</span>}
+                {!collapsed && <span className="text-base font-normal">{toTitleCase(item.label)}</span>}
               </Button>
             );
           })}
@@ -135,12 +135,12 @@ export function Layout({ children }: LayoutProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="text-center space-y-0.5">
-                <p className="text-base font-normal text-sidebar-foreground">{profile.full_name}</p>
+                <p className="text-base font-normal text-sidebar-foreground">{toTitleCase(profile.full_name)}</p>
                 {profile.position && (
-                  <p className="text-sm text-sidebar-foreground/60">{profile.position}</p>
+                  <p className="text-sm text-sidebar-foreground/60">{toTitleCase(profile.position)}</p>
                 )}
                 {company && (
-                  <p className="text-sm text-sidebar-foreground/60">{company.name}</p>
+                  <p className="text-sm text-sidebar-foreground/60">{toTitleCase(company.name)}</p>
                 )}
                 <p className="sr-only">Wenkey</p>
               </div>
@@ -168,7 +168,7 @@ export function Layout({ children }: LayoutProps) {
             onClick={signOut}
           >
             <LogOut className="w-5 h-5" />
-            {!collapsed && <span className="text-base font-normal">Sair</span>}
+            {!collapsed && <span className="text-base font-normal">{toTitleCase('Sair')}</span>}
           </Button>
         </div>
       </aside>

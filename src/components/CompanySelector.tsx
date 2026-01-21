@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { toTitleCase } from '@/lib/utils';
 
 interface Company {
   id: string;
@@ -87,7 +88,7 @@ export function CompanySelector() {
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
         <Building2 className="w-4 h-4 text-sidebar-foreground/60" />
         <span className="text-sm text-sidebar-foreground/60">
-          Carregando...
+          {toTitleCase('Carregando...')}
         </span>
       </div>
     );
@@ -98,9 +99,9 @@ export function CompanySelector() {
       <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-foreground">
         <Building2 className="w-4 h-4 text-sidebar-foreground/80" />
         <div className="flex flex-col">
-          <span className="text-xs text-sidebar-foreground/60">Empresa atual</span>
+          <span className="text-xs text-sidebar-foreground/60">{toTitleCase('Empresa atual')}</span>
           <span className="text-sm font-semibold">
-            {selectedCompany?.name ?? 'Nenhuma empresa vinculada'}
+            {selectedCompany?.name ? toTitleCase(selectedCompany.name) : toTitleCase('Nenhuma empresa vinculada')}
           </span>
         </div>
       </div>
@@ -112,7 +113,7 @@ export function CompanySelector() {
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
         <Building2 className="w-4 h-4 text-sidebar-foreground/60" />
         <span className="text-sm text-sidebar-foreground/60">
-          Nenhuma empresa
+          {toTitleCase('Nenhuma empresa')}
         </span>
       </div>
     );
@@ -123,13 +124,13 @@ export function CompanySelector() {
       <SelectTrigger className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4" />
-          <SelectValue placeholder="Selecione uma empresa" />
+          <SelectValue placeholder={toTitleCase('Selecione uma empresa')} />
         </div>
       </SelectTrigger>
       <SelectContent>
         {companies.map((company) => (
           <SelectItem key={company.id} value={company.id}>
-            {company.name}
+            {toTitleCase(company.name)}
           </SelectItem>
         ))}
       </SelectContent>

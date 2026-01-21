@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
+import { toTitleCase } from '@/lib/utils';
 
 interface Company {
     id: string;
@@ -171,12 +172,7 @@ export default function PerformanceHistory() {
     };
 
     const getPerformanceColor = (pct: number) => {
-        if (pct <= 20) return 'text-red-500 font-bold';
-        if (pct <= 40) return 'text-orange-500 font-bold';
-        if (pct <= 60) return 'text-yellow-500 font-bold';
-        if (pct <= 80) return 'text-lime-600 font-bold';
-        if (pct <= 100) return 'text-green-600 font-bold';
-        return 'text-green-700 font-bold'; // > 100%
+        return 'text-black font-normal';
     };
 
     const getInitials = (name: string) => {
@@ -216,10 +212,10 @@ export default function PerformanceHistory() {
                     <div>
                         <h1 className="text-3xl font-bold flex items-center gap-2">
                             <TrendingUp className="h-8 w-8" />
-                            Histórico de Performance
+                            {toTitleCase('Histórico de Performance')}
                         </h1>
-                        <p className="text-base font-normal text-muted-foreground">
-                            Acompanhamento de resultados por quarter e média anual dos colaboradores.
+                        <p className="text-base font-normal text-black">
+                            {toTitleCase('Acompanhamento de resultados por quarter e média anual dos colaboradores.')}
                         </p>
                     </div>
 
@@ -230,12 +226,12 @@ export default function PerformanceHistory() {
                                 onValueChange={setFilterCompanyId}
                             >
                                 <SelectTrigger className="w-[240px]">
-                                    <SelectValue placeholder="Selecione a Empresa" />
+                                    <SelectValue placeholder={toTitleCase('Selecione a Empresa')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {companies.map((company) => (
                                         <SelectItem key={company.id} value={company.id}>
-                                            {company.name}
+                                            {toTitleCase(company.name)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -246,11 +242,11 @@ export default function PerformanceHistory() {
                             onValueChange={(v) => setActiveUsersOnly(v === "active")}
                         >
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Filtro de usuários" />
+                                <SelectValue placeholder={toTitleCase('Filtro de usuários')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="active">Apenas Ativos</SelectItem>
-                                <SelectItem value="all">Todos os Usuários</SelectItem>
+                                <SelectItem value="active">{toTitleCase('Apenas Ativos')}</SelectItem>
+                                <SelectItem value="all">{toTitleCase('Todos os Usuários')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -260,7 +256,7 @@ export default function PerformanceHistory() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Trophy className="h-5 w-5" />
-                            Tabela de Resultados
+                            {toTitleCase('Tabela de Resultados')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -270,24 +266,24 @@ export default function PerformanceHistory() {
                             </div>
                         ) : sortedAndFilteredUsers.length === 0 ? (
                             <div className="text-center py-8 text-base font-normal text-muted-foreground">
-                                Nenhum colaborador encontrado.
+                                {toTitleCase('Nenhum colaborador encontrado.')}
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[300px]">Colaborador</TableHead>
+                                            <TableHead className="w-[300px] text-black">{toTitleCase('Colaborador')}</TableHead>
                                             {quarters.map(quarter => (
-                                                <TableHead key={quarter.id} className="text-center min-w-[100px]">
-                                                    <div>{quarter.name}</div>
-                                                    <div className="text-xs font-normal text-muted-foreground">
+                                                <TableHead key={quarter.id} className="text-center min-w-[100px] text-black">
+                                                    <div>{toTitleCase(quarter.name)}</div>
+                                                    <div className="text-xs font-normal text-black">
                                                         {new Date(quarter.end_date).toLocaleDateString()}
                                                     </div>
                                                 </TableHead>
                                             ))}
-                                            <TableHead className="text-center font-normal bg-muted/30 w-[120px] text-base">
-                                                Média Geral
+                                            <TableHead className="text-center font-normal bg-muted/30 w-[120px] text-base text-black">
+                                                {toTitleCase('Média Geral')}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -303,9 +299,9 @@ export default function PerformanceHistory() {
                                                                 <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
                                                             </Avatar>
                                                             <div>
-                                                                <div className="text-base font-normal">{user.full_name}</div>
+                                                                <div className="text-base font-normal">{toTitleCase(user.full_name)}</div>
                                                                 {user.sector && (
-                                                                    <div className="text-sm text-muted-foreground">{user.sector}</div>
+                                                                    <div className="text-sm text-black">{toTitleCase(user.sector)}</div>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -320,7 +316,7 @@ export default function PerformanceHistory() {
                                                                         {Math.round(result.result_percent)}%
                                                                     </span>
                                                                 ) : (
-                                                                    <span className="text-muted-foreground">-</span>
+                                                                    <span className="text-black">-</span>
                                                                 )}
                                                             </TableCell>
                                                         );

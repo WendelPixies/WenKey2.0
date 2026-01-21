@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Building2, Edit, Users as UsersIcon } from 'lucide-react';
+import { Plus, Building2, Edit, Users as UsersIcon, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUserRole } from '@/hooks/useUserRole';
+import { toTitleCase } from '@/lib/utils';
 
 interface Company {
   id: string;
@@ -81,10 +82,10 @@ export default function Companies() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const sectors = formData.sectors.split(',').map(s => s.trim()).filter(Boolean);
-      
+
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -130,12 +131,12 @@ export default function Companies() {
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!editingCompany) return;
 
     try {
       const sectors = formData.sectors.split(',').map(s => s.trim()).filter(Boolean);
-      
+
       const { error } = await supabase
         .from('companies')
         .update({
@@ -188,9 +189,9 @@ export default function Companies() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Empresas</h1>
+            <h1 className="text-3xl font-bold mb-2">{toTitleCase('Empresas')}</h1>
             <p className="text-muted-foreground">
-              Gerencie as empresas da sua organização
+              {toTitleCase('Gerencie as empresas da sua organização')}
             </p>
           </div>
           {isAdmin && (
@@ -198,139 +199,157 @@ export default function Companies() {
               <DialogTrigger asChild>
                 <Button className="gap-2">
                   <Plus className="w-4 h-4" />
-                  Nova Empresa
+                  {toTitleCase('Nova Empresa')}
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Nova Empresa</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="name">Nome da Empresa *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{toTitleCase('Nova Empresa')}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 space-y-2">
+                      <Label htmlFor="name">{toTitleCase('Nome da Empresa')} *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cnpj">{toTitleCase('CNPJ')}</Label>
+                      <Input
+                        id="cnpj"
+                        value={formData.cnpj}
+                        onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                        placeholder="00.000.000/0000-00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="responsible">{toTitleCase('Responsável')}</Label>
+                      <Input
+                        id="responsible"
+                        value={formData.responsible}
+                        onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">{toTitleCase('Telefone')}</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="(00) 00000-0000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">{toTitleCase('Cidade')}</Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">{toTitleCase('Estado')}</Label>
+                      <Input
+                        id="state"
+                        value={formData.state}
+                        onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                        placeholder="SP"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <Label htmlFor="sectors">{toTitleCase('Setores (separados por vírgula)')}</Label>
+                      <Input
+                        id="sectors"
+                        value={formData.sectors}
+                        onChange={(e) => setFormData({ ...formData, sectors: e.target.value })}
+                        placeholder="Tecnologia, Marketing, Vendas"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cnpj">CNPJ</Label>
-                    <Input
-                      id="cnpj"
-                      value={formData.cnpj}
-                      onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                      placeholder="00.000.000/0000-00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="responsible">Responsável</Label>
-                    <Input
-                      id="responsible"
-                      value={formData.responsible}
-                      onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">Cidade</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">Estado</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      placeholder="SP"
-                      maxLength={2}
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="sectors">Setores (separados por vírgula)</Label>
-                    <Input
-                      id="sectors"
-                      value={formData.sectors}
-                      onChange={(e) => setFormData({ ...formData, sectors: e.target.value })}
-                      placeholder="Tecnologia, Marketing, Vendas"
-                    />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full">
-                  Criar Empresa
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <Button type="submit" className="w-full">
+                    {toTitleCase('Criar Empresa')}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {companies.map((company) => (
-            <Card key={company.id}>
-              <CardHeader>
+            <Card key={company.id} className="hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Building2 className="w-5 h-5 text-primary" />
                     </div>
-                    <div>
-                      <CardTitle>{company.name}</CardTitle>
+                    <div className="space-y-1">
+                      <CardTitle className="text-base font-semibold leading-none">{toTitleCase(company.name)}</CardTitle>
                       {company.cnpj && (
-                        <CardDescription className="text-xs">{company.cnpj}</CardDescription>
+                        <CardDescription className="text-xs font-mono">{company.cnpj}</CardDescription>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     {isAdmin && (
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         onClick={() => openEditDialog(company)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                     )}
-                    <Badge variant={company.is_active ? 'default' : 'secondary'}>
-                      {company.is_active ? 'Ativa' : 'Inativa'}
+                    <Badge
+                      variant={company.is_active ? 'default' : 'secondary'}
+                      className={company.is_active ? "bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border-emerald-200 shadow-none" : ""}
+                    >
+                      {company.is_active ? toTitleCase('Ativa') : toTitleCase('Inativa')}
                     </Badge>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {company.responsible && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Responsável:</span>{' '}
-                    <span className="font-medium">{company.responsible}</span>
-                  </div>
-                )}
-                {company.city && company.state && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Localização:</span>{' '}
-                    <span className="font-medium">{company.city}, {company.state}</span>
-                  </div>
-                )}
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 pt-1">
+                  {company.responsible && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] uppercase font-medium text-muted-foreground tracking-wider flex items-center gap-1">
+                        <UsersIcon className="w-3 h-3" />
+                        Responsável
+                      </span>
+                      <span className="text-sm font-medium truncate" title={toTitleCase(company.responsible)}>
+                        {toTitleCase(company.responsible)}
+                      </span>
+                    </div>
+                  )}
+                  {company.city && company.state && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] uppercase font-medium text-muted-foreground tracking-wider flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        Localização
+                      </span>
+                      <span className="text-sm font-medium truncate" title={`${toTitleCase(company.city)}, ${toTitleCase(company.state)}`}>
+                        {toTitleCase(company.city)}, {toTitleCase(company.state)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 {company.sectors && company.sectors.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {company.sectors.map((sector, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {sector}
-                      </Badge>
-                    ))}
+                  <div className="pt-3 border-t">
+                    <span className="text-[10px] uppercase font-medium text-muted-foreground tracking-wider mb-1 block">
+                      Setores
+                    </span>
+                    <p className="text-sm text-foreground/80 leading-relaxed">
+                      {company.sectors.map((sector) => toTitleCase(sector)).join(', ')}
+                    </p>
                   </div>
                 )}
               </CardContent>
