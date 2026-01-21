@@ -664,27 +664,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="mt-6 space-y-3">
-                {quarterPerformance.map(perf => (
-                  <div key={perf.quarter_id} className="flex items-center gap-3">
-                    <div className={cn(
-                      'h-2 w-2 rounded-full',
-                      perf.status === 'current' ? 'bg-primary' : perf.status === 'finished' ? 'bg-muted-foreground' : 'bg-muted'
-                    )} />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">
-                          {perf.quarter_name}{perf.is_active ? ' (atual)' : ''}
-                        </span>
-                        <span className="text-muted-foreground">{perf.result_pct}%</span>
-                      </div>
-                      <Progress
-                        value={perf.result_pct}
-                        className="mt-2"
-                        style={getProgressStyle(perf.result_pct)}
-                      />
-                    </div>
-                  </div>
-                ))}
+                {/* Quarter list removed as per request */}
               </div>
             </CardContent>
           </Card>
