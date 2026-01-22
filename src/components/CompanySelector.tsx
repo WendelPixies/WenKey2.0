@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useCompany } from '@/contexts/CompanyContext';
+import { useCompany, Company } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,13 +7,8 @@ import { Building2 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toTitleCase } from '@/lib/utils';
 
-interface Company {
-  id: string;
-  name: string;
-}
-
 export function CompanySelector() {
-  const { selectedCompanyId, setSelectedCompanyId } = useCompany();
+  const { selectedCompany, setSelectedCompany } = useCompany();
   const { user } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -55,17 +50,31 @@ export function CompanySelector() {
         if (mounted) {
           setCompanies(companyList);
 
-          // Only auto-select if we absolutely don't have a valid selection
-          const currentId = localStorage.getItem('selectedCompanyId');
-          const hasCurrentValid = companyList.some(c => c.id === currentId);
+          // Logic to validate/update selection
+          if (companyList.length > 0) {
+            // Check if current selection is valid
+            const currentInList = selectedCompany
+              ? companyList.find(c => c.id === selectedCompany.id)
+              : null;
 
-          if (!currentId || !hasCurrentValid) {
-            if (companyList.length > 0) {
-              setSelectedCompanyId(companyList[0].id);
+            if (currentInList) {
+              // Update name if needed (or if it was "Carregando...")
+              if (currentInList.name !== selectedCompany?.name) {
+                setSelectedCompany(currentInList);
+              }
+            } else {
+              // If no selection, or selection not valid (e.g. inactive), select first
+              if (!selectedCompany) {
+                setSelectedCompany(companyList[0]);
+              } else {
+                // The current selection is NOT in the active list.
+                // Ideally we reset, but IF the user sees "unloading", it's because this runs.
+                // We should only reset if we are sure it's invalid.
+                // If role is admin, list contains ALL active companies.
+                // So if it's not in list, it's invalid/inactive.
+                setSelectedCompany(companyList[0]);
+              }
             }
-          } else if (currentId && !selectedCompanyId) {
-            // Restore from localStorage if context is empty
-            setSelectedCompanyId(currentId);
           }
         }
       } catch (error) {
@@ -77,13 +86,13 @@ export function CompanySelector() {
 
     fetchCompanies();
     return () => { mounted = false; };
-  }, [user, role, roleLoading]); // Removed setSelectedCompanyId to avoid unnecessary re-runs
+  }, [user, role, roleLoading]); // Remove selectedCompany from dependency to avoid loop
 
-  const selectedCompany = companies.find((company) => company.id === selectedCompanyId);
   const isAdmin = role === 'admin';
   const showSelector = isAdmin;
 
-  if (loading || roleLoading) {
+  // Only show loading state if we DON'T have a selected company to show
+  if ((loading || roleLoading) && !selectedCompany) {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
         <Building2 className="w-4 h-4 text-sidebar-foreground/60" />
@@ -108,7 +117,7 @@ export function CompanySelector() {
     );
   }
 
-  if (companies.length === 0 && isAdmin) {
+  if (companies.length === 0 && !loading && isAdmin) {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
         <Building2 className="w-4 h-4 text-sidebar-foreground/60" />
@@ -120,11 +129,19 @@ export function CompanySelector() {
   }
 
   return (
-    <Select value={selectedCompanyId || undefined} onValueChange={setSelectedCompanyId}>
+    <Select
+      value={selectedCompany?.id}
+      onValueChange={(value) => {
+        const company = companies.find(c => c.id === value);
+        if (company) setSelectedCompany(company);
+      }}
+    >
       <SelectTrigger className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4" />
-          <SelectValue placeholder={toTitleCase('Selecione uma empresa')} />
+          <SelectValue asChild>
+            <span>{selectedCompany ? toTitleCase(selectedCompany.name) : toTitleCase('Selecione...')}</span>
+          </SelectValue>
         </div>
       </SelectTrigger>
       <SelectContent>

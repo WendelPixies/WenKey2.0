@@ -1,27 +1,55 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
+export interface Company {
+  id: string;
+  name: string;
+  is_active?: boolean;
+}
+
 interface CompanyContextType {
+  selectedCompany: Company | null;
   selectedCompanyId: string | null;
-  setSelectedCompanyId: (id: string | null) => void;
+  setSelectedCompany: (company: Company | null) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(() => {
-    return localStorage.getItem('selectedCompanyId');
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(() => {
+    try {
+      const saved = localStorage.getItem('selectedCompany');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+
+      // Fallback for migration from ID-only storage
+      const legacyId = localStorage.getItem('selectedCompanyId');
+      if (legacyId) {
+        return { id: legacyId, name: 'Carregando...' };
+      }
+    } catch (e) {
+      console.error('Error parsing selectedCompany from localStorage', e);
+    }
+    return null;
   });
 
   useEffect(() => {
-    if (selectedCompanyId) {
-      localStorage.setItem('selectedCompanyId', selectedCompanyId);
+    if (selectedCompany) {
+      localStorage.setItem('selectedCompany', JSON.stringify(selectedCompany));
+      // Keep legacy ID for compatibility if other components use it directly (optional but safer)
+      localStorage.setItem('selectedCompanyId', selectedCompany.id);
     } else {
+      localStorage.removeItem('selectedCompany');
       localStorage.removeItem('selectedCompanyId');
     }
-  }, [selectedCompanyId]);
+  }, [selectedCompany]);
 
   return (
-    <CompanyContext.Provider value={{ selectedCompanyId, setSelectedCompanyId }}>
+    <CompanyContext.Provider value={{
+      selectedCompany,
+      selectedCompanyId: selectedCompany?.id || null,
+      setSelectedCompany
+    }}>
       {children}
     </CompanyContext.Provider>
   );
