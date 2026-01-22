@@ -199,10 +199,7 @@ export default function Users() {
             });
 
           if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(filePath);
-            avatarUrl = publicUrl;
+            avatarUrl = filePath;
           }
         }
 
@@ -258,10 +255,7 @@ export default function Users() {
           });
 
         if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-          avatarUrl = publicUrl;
+          avatarUrl = filePath;
         }
       }
 
