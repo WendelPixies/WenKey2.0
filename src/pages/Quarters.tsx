@@ -334,6 +334,8 @@ export default function Quarters() {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Check-in functions
   const handleCreateCheckIn = async () => {
     if (!selectedQuarter || !checkInFormData.occurred_at || !selectedCompanyForForm) {
@@ -345,6 +347,7 @@ export default function Quarters() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -374,6 +377,8 @@ export default function Quarters() {
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -387,6 +392,7 @@ export default function Quarters() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('checkins')
@@ -414,6 +420,8 @@ export default function Quarters() {
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -789,11 +797,11 @@ export default function Quarters() {
               <Button variant="outline" onClick={() => {
                 setCheckInDialogOpen(false);
                 resetCheckInForm();
-              }}>
+              }} disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button onClick={editingCheckIn ? handleEditCheckIn : handleCreateCheckIn}>
-                {editingCheckIn ? 'Atualizar' : 'Salvar Check-in'}
+              <Button onClick={editingCheckIn ? handleEditCheckIn : handleCreateCheckIn} disabled={isSubmitting}>
+                {isSubmitting ? (editingCheckIn ? 'Atualizando...' : 'Salvando...') : (editingCheckIn ? 'Atualizar' : 'Salvar Check-in')}
               </Button>
             </DialogFooter>
           </DialogContent>
