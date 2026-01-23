@@ -367,6 +367,14 @@ export default function KRCheckins() {
     }
   };
 
+  const getProgressColor = (percentage: number): string => {
+    // Verde apenas quando atingimento for 100% (ou acima, já clamped)
+    if (percentage >= 100) return '#00CC00';
+    if (percentage >= 70) return '#FFCC00'; // Amarelo para alto mas não completo
+    if (percentage >= 40) return '#FF6600'; // Laranja
+    return '#FF0000'; // Vermelho para baixo
+  };
+
   const loadCheckinResults = async () => {
     if (!selectedQuarter) return;
 
@@ -792,24 +800,12 @@ export default function KRCheckins() {
     }
   };
 
-  const calculateAttainment = (realized: number, target: number, direction: string | null) => {
-    if (target === null || target === undefined) return 0;
-    return calculateKR(realized, null, target, direction);
-  };
-
-  const getProgressColor = (percentage: number): string => {
-    // Verde apenas quando atingimento for 100% (ou acima, já clamped)
-    if (percentage >= 100) return '#00CC00';
-    if (percentage >= 70) return '#FFCC00'; // Amarelo para alto mas não completo
-    if (percentage >= 40) return '#FF6600'; // Laranja
-    return '#FF0000'; // Vermelho para baixo
-  };
-
   const calculateKR = (
     realized: number,
     min: number | null,
     target: number | null,
-    direction: string | null
+    direction: string | null,
+    type?: string | null
   ) => {
     // Basic safety
     if (target === null || target === undefined) return 0;
@@ -817,6 +813,40 @@ export default function KRCheckins() {
     const safeTarget = Number(target);
     const safeRealized = Number(realized);
     const safeMin = (min !== null && min !== undefined) ? Number(min) : null;
+
+    // Lógica específica para DATAS
+    if (type === 'date' || type === 'data') {
+      // Se não tem realizado, 0%
+      if (!realized) return 0;
+
+      // D_o = Data Alvo (Meta)
+      // D_1 = Data Limite / Tolerância (Mínimo Orçamento usado como limite tolerável)
+      // D_r = Data Realizada
+
+      const Do = safeTarget;
+      const Dr = safeRealized;
+      // Se safeMin não for definido, assumimos que tolerância = meta (sem tolerância extra)
+      const D1 = safeMin !== null ? safeMin : safeTarget;
+
+      // Se a data realizada for anterior ou igual à data alvo (entregou antes ou no prazo)
+      if (Dr <= Do) return 100;
+
+      // Se a data realizada for posterior à data limite tolerável (estourou o prazo máximo)
+      if (Dr > D1) return 0;
+
+      // Se está entre a meta e a tolerância: cálculo linear decrescente
+      // Dias de atraso = Dr - Do
+      // Dias de tolerância = D1 - Do
+
+      const oneDay = 24 * 60 * 60 * 1000;
+      const daysDelay = (Dr - Do) / oneDay;
+      const daysTolerance = (D1 - Do) / oneDay;
+
+      if (daysTolerance <= 0) return 0; // Evita divisão por zero se D1 <= Do
+
+      const score = 100 * (1 - (daysDelay / daysTolerance));
+      return Math.max(0, Math.min(100, score));
+    }
 
     // Logic for "Increase" / "Maior é melhor" (Default)
     if (!direction || direction === 'increase' || direction === 'maior-é-melhor') {
@@ -855,6 +885,11 @@ export default function KRCheckins() {
     }
 
     return 0;
+  };
+
+  const calculateAttainment = (realized: number, target: number, direction: string | null, type?: string | null, min?: number | null) => {
+    if (target === null || target === undefined) return 0;
+    return calculateKR(realized, min || null, target, direction, type);
   };
 
   const updateStoredProgress = async (kr: KeyResult, newPercent: number) => {
@@ -1029,7 +1064,8 @@ export default function KRCheckins() {
           result.valor_realizado,
           result.minimo_orcamento,
           result.meta_checkin,
-          kr.direction
+          kr.direction,
+          kr.type
         );
 
         const weight = typeof kr.weight === 'number' && !Number.isNaN(kr.weight) ? kr.weight : 1;
@@ -1472,7 +1508,7 @@ export default function KRCheckins() {
                                               <div className="font-bold">{formatValue(result.valor_realizado, kr.type, kr.unit)}</div>
                                               <div className="text-[10px] font-semibold text-[#0d3a8c]">
                                                 <span>Atingimento:</span>
-                                                <span className="ml-1">{calculateAttainment(result.valor_realizado, result.meta_checkin, kr.direction).toFixed(2)}%</span>
+                                                <span className="ml-1">{calculateAttainment(result.valor_realizado, result.meta_checkin, kr.direction, kr.type, result.minimo_orcamento).toFixed(2)}%</span>
                                               </div>
                                             </div>
                                           </div>
@@ -1482,7 +1518,8 @@ export default function KRCheckins() {
                                                 result.valor_realizado,
                                                 result.minimo_orcamento,
                                                 result.meta_checkin,
-                                                kr.direction
+                                                kr.direction,
+                                                kr.type
                                               )}
                                               className="h-2"
                                               style={{
@@ -1490,14 +1527,15 @@ export default function KRCheckins() {
                                                   result.valor_realizado,
                                                   result.minimo_orcamento,
                                                   result.meta_checkin,
-                                                  kr.direction
+                                                  kr.direction,
+                                                  kr.type
                                                 ))
                                               }}
                                             />
                                             <div className="flex justify-between items-center text-[10px]">
                                               <span className="text-muted-foreground">KR:</span>
                                               <span className="font-semibold text-primary text-sm">
-                                                {calculateKR(result.valor_realizado, result.minimo_orcamento, result.meta_checkin, kr.direction).toFixed(2)}%
+                                                {calculateKR(result.valor_realizado, result.minimo_orcamento, result.meta_checkin, kr.direction, kr.type).toFixed(2)}%
                                               </span>
                                             </div>
                                           </div>
@@ -1655,14 +1693,15 @@ export default function KRCheckins() {
                             <div className="text-sm space-y-1">
                               <div className="font-semibold text-[#0d3a8c]">
                                 <span>Atingimento:</span>
-                                <span className="ml-1">{calculateAttainment(parseFloat(parseInputValue(formData.realizado)) || 0, parseFloat(parseInputValue(formData.meta)) || 0, currentKR.direction).toFixed(2)}%</span>
+                                <span className="ml-1">{calculateAttainment(parseFloat(parseInputValue(formData.realizado)) || 0, parseFloat(parseInputValue(formData.meta)) || 0, currentKR.direction, currentKR.type, parseFloat(parseInputValue(formData.minimo)) || 0).toFixed(2)}%</span>
                               </div>
                               <div className="font-semibold text-primary text-sm">
                                 KR: {calculateKR(
                                   parseFloat(parseInputValue(formData.realizado)) || 0,
                                   parseFloat(parseInputValue(formData.minimo)) || 0,
                                   parseFloat(parseInputValue(formData.meta)) || 0,
-                                  currentKR.direction
+                                  currentKR.direction,
+                                  currentKR.type
                                 ).toFixed(2)}%
                               </div>
                             </div>
@@ -1674,7 +1713,8 @@ export default function KRCheckins() {
                           parseFloat(parseInputValue(formData.realizado)) || 0,
                           parseFloat(parseInputValue(formData.minimo)) || 0,
                           parseFloat(parseInputValue(formData.meta)) || 0,
-                          currentKR.direction
+                          currentKR.direction,
+                          currentKR.type
                         ) : 0}
                         className="h-3"
                         style={{
@@ -1682,7 +1722,8 @@ export default function KRCheckins() {
                             parseFloat(parseInputValue(formData.realizado)) || 0,
                             parseFloat(parseInputValue(formData.minimo)) || 0,
                             parseFloat(parseInputValue(formData.meta)) || 0,
-                            currentKR.direction
+                            currentKR.direction,
+                            currentKR.type
                           ) : 0)
                         }}
                       />
