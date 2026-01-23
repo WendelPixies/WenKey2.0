@@ -215,6 +215,7 @@ export function AddKRDialog({ objectiveId, companyId, quarterId, onSuccess }: Ad
                             <SelectItem value="number">Número</SelectItem>
                             <SelectItem value="percentage">Porcentagem</SelectItem>
                             <SelectItem value="currency">Moeda</SelectItem>
+                            <SelectItem value="date">Data</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

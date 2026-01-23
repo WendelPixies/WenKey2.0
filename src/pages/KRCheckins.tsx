@@ -447,6 +447,18 @@ export default function KRCheckins() {
 
   const formatInputValue = (value: string, type: string | null) => {
     if (!value) return '';
+
+    if (type === 'date' || type === 'data') {
+      if (value.includes('-')) return value;
+      const timestamp = parseFloat(value);
+      if (isNaN(timestamp)) return value;
+      const d = new Date(timestamp);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     const numValue = parseFloat(parseInputValue(value));
     if (isNaN(numValue)) return value;
 
@@ -568,9 +580,28 @@ export default function KRCheckins() {
       return;
     }
 
-    const meta = parseFloat(parseInputValue(formData.meta));
-    const minimo = parseFloat(parseInputValue(formData.minimo));
-    const realizado = parseFloat(parseInputValue(formData.realizado));
+    let meta: number;
+    let minimo: number;
+    let realizado: number;
+
+    if (currentKR.type === 'date' || currentKR.type === 'data') {
+      const getTime = (val: string) => {
+        if (!val) return NaN;
+        // Input date returns YYYY-MM-DD. Parse as local date noon to avoid timezone issues or just use Y,M,D
+        const parts = val.split('-');
+        if (parts.length !== 3) return NaN;
+        // Note: using local time (00:00:00)
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+      };
+
+      meta = getTime(formData.meta);
+      minimo = getTime(formData.minimo);
+      realizado = getTime(formData.realizado);
+    } else {
+      meta = parseFloat(parseInputValue(formData.meta));
+      minimo = parseFloat(parseInputValue(formData.minimo));
+      realizado = parseFloat(parseInputValue(formData.realizado));
+    }
 
     console.log('Valores parseados:', { meta, minimo, realizado });
 
@@ -723,6 +754,9 @@ export default function KRCheckins() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         });
+      case 'date':
+      case 'data':
+        return new Date(numValue).toLocaleDateString('pt-BR');
       default:
         return `${numValue.toLocaleString('pt-BR')} ${unit || ''}`;
     }
@@ -737,6 +771,9 @@ export default function KRCheckins() {
         return 'percentual';
       case 'numero':
         return 'número';
+      case 'date':
+      case 'data':
+        return 'data';
       default:
         return type || '--';
     }
@@ -1532,28 +1569,37 @@ export default function KRCheckins() {
                           {formatValue(parseFloat(parseInputValue(formData.meta)) || 0, currentKR.type, currentKR.unit)}
                         </span>
                       </div>
-                      <Input
-                        type="text"
-                        placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'Ex: R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'Ex: 85%' : 'Ex: 100'}
-                        value={formData.meta}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          let formatted = v;
-                          if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
-                            formatted = formatCurrencyInputLive(v);
-                          } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
-                            formatted = formatPercentageInputLive(v);
-                          } else {
-                            formatted = formatNumberInputLive(v);
-                          }
-                          setFormData({
-                            ...formData,
-                            meta: formatted,
-                          });
-                        }}
-                        onBlur={() => setFormData({ ...formData, meta: formatInputValue(formData.meta, currentKR.type) })}
-                        className="text-right"
-                      />
+                      {currentKR.type === 'date' || currentKR.type === 'data' ? (
+                        <Input
+                          type="date"
+                          value={formData.meta}
+                          onChange={(e) => setFormData({ ...formData, meta: e.target.value })}
+                          className="text-right"
+                        />
+                      ) : (
+                        <Input
+                          type="text"
+                          placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'Ex: R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'Ex: 85%' : 'Ex: 100'}
+                          value={formData.meta}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            let formatted = v;
+                            if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
+                              formatted = formatCurrencyInputLive(v);
+                            } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
+                              formatted = formatPercentageInputLive(v);
+                            } else {
+                              formatted = formatNumberInputLive(v);
+                            }
+                            setFormData({
+                              ...formData,
+                              meta: formatted,
+                            });
+                          }}
+                          onBlur={() => setFormData({ ...formData, meta: formatInputValue(formData.meta, currentKR.type) })}
+                          className="text-right"
+                        />
+                      )}
                     </div>
 
                     <div className="space-y-3">
@@ -1563,28 +1609,37 @@ export default function KRCheckins() {
                           {formatValue(parseFloat(parseInputValue(formData.minimo)) || 0, currentKR.type, currentKR.unit)}
                         </span>
                       </div>
-                      <Input
-                        type="text"
-                        placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'Ex: R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'Ex: 50%' : 'Ex: 50'}
-                        value={formData.minimo}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          let formatted = v;
-                          if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
-                            formatted = formatCurrencyInputLive(v);
-                          } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
-                            formatted = formatPercentageInputLive(v);
-                          } else {
-                            formatted = formatNumberInputLive(v);
-                          }
-                          setFormData({
-                            ...formData,
-                            minimo: formatted,
-                          });
-                        }}
-                        onBlur={() => setFormData({ ...formData, minimo: formatInputValue(formData.minimo, currentKR.type) })}
-                        className="text-right"
-                      />
+                      {currentKR.type === 'date' || currentKR.type === 'data' ? (
+                        <Input
+                          type="date"
+                          value={formData.minimo}
+                          onChange={(e) => setFormData({ ...formData, minimo: e.target.value })}
+                          className="text-right"
+                        />
+                      ) : (
+                        <Input
+                          type="text"
+                          placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'Ex: R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'Ex: 50%' : 'Ex: 50'}
+                          value={formData.minimo}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            let formatted = v;
+                            if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
+                              formatted = formatCurrencyInputLive(v);
+                            } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
+                              formatted = formatPercentageInputLive(v);
+                            } else {
+                              formatted = formatNumberInputLive(v);
+                            }
+                            setFormData({
+                              ...formData,
+                              minimo: formatted,
+                            });
+                          }}
+                          onBlur={() => setFormData({ ...formData, minimo: formatInputValue(formData.minimo, currentKR.type) })}
+                          className="text-right"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -1631,36 +1686,45 @@ export default function KRCheckins() {
                           ) : 0)
                         }}
                       />
-                      <Input
-                        type="text"
-                        placeholder={
-                          currentKR.type === 'moeda' || currentKR.type === 'currency'
-                            ? 'Ex: R$ 1.000,00'
-                            : currentKR.type === 'percentual' || currentKR.type === 'percentage'
-                              ? 'Ex: 75%'
-                              : 'Ex: 1000'
-                        }
-                        value={formData.realizado}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          let formatted = v;
-                          if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
-                            formatted = formatCurrencyInputLive(v);
-                          } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
-                            formatted = formatPercentageInputLive(v);
-                          } else {
-                            formatted = formatNumberInputLive(v);
+                      {currentKR.type === 'date' || currentKR.type === 'data' ? (
+                        <Input
+                          type="date"
+                          value={formData.realizado}
+                          onChange={(e) => setFormData({ ...formData, realizado: e.target.value })}
+                          className="mt-2 text-right"
+                        />
+                      ) : (
+                        <Input
+                          type="text"
+                          placeholder={
+                            currentKR.type === 'moeda' || currentKR.type === 'currency'
+                              ? 'Ex: R$ 1.000,00'
+                              : currentKR.type === 'percentual' || currentKR.type === 'percentage'
+                                ? 'Ex: 75%'
+                                : 'Ex: 1000'
                           }
-                          setFormData({ ...formData, realizado: formatted });
-                        }}
-                        onBlur={() =>
-                          setFormData({
-                            ...formData,
-                            realizado: formatInputValue(formData.realizado, currentKR.type),
-                          })
-                        }
-                        className="mt-2 text-right"
-                      />
+                          value={formData.realizado}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            let formatted = v;
+                            if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
+                              formatted = formatCurrencyInputLive(v);
+                            } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
+                              formatted = formatPercentageInputLive(v);
+                            } else {
+                              formatted = formatNumberInputLive(v);
+                            }
+                            setFormData({ ...formData, realizado: formatted });
+                          }}
+                          onBlur={() =>
+                            setFormData({
+                              ...formData,
+                              realizado: formatInputValue(formData.realizado, currentKR.type),
+                            })
+                          }
+                          className="mt-2 text-right"
+                        />
+                      )}
                     </div>
                   )}
                 </div>
