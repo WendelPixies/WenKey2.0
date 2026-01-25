@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCompany, Company } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Building2 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toTitleCase } from '@/lib/utils';
@@ -127,29 +127,18 @@ export function CompanySelector() {
     );
   }
 
+  // Render static display instead of dropdown
   return (
-    <Select
-      value={selectedCompany?.id}
-      onValueChange={(value) => {
-        const company = companies.find(c => c.id === value);
-        if (company) setSelectedCompany(company);
-      }}
-    >
-      <SelectTrigger className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
-        <div className="flex items-center gap-2">
-          <Building2 className="w-4 h-4" />
-          <SelectValue asChild>
-            <span>{selectedCompany ? toTitleCase(selectedCompany.name) : toTitleCase('Selecione...')}</span>
-          </SelectValue>
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        {companies.map((company) => (
-          <SelectItem key={company.id} value={company.id}>
-            {toTitleCase(company.name)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-foreground">
+      <div className="w-8 h-8 rounded-md bg-sidebar-primary/10 flex items-center justify-center shrink-0">
+        <Building2 className="w-4 h-4 text-sidebar-primary" />
+      </div>
+      <div className="flex flex-col min-w-0">
+        <span className="text-xs text-sidebar-foreground/60 truncate">{toTitleCase('Empresa')}</span>
+        <span className="text-sm font-semibold truncate" title={selectedCompany?.name || ''}>
+          {selectedCompany ? toTitleCase(selectedCompany.name) : toTitleCase('Selecione...')}
+        </span>
+      </div>
+    </div>
   );
 }
