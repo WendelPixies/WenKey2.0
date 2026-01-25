@@ -90,8 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted) {
           console.warn('Auth initialization timed out - forcing loading to false');
           setLoading(false);
+          // If we timed out, we might be offline or supabase is blocked.
+          // Don't necessarily log them out, but allow the UI to render (likely triggering ProtectedRoute redirect if user is null)
         }
-      }, 3000);
+      }, 10000); // Increased to 10s to avoid premature logouts on slow connections
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -122,6 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         if (!mounted) return;
 
+        // If we are signing out, we handle it in the signOut function to ensure clean redirect
+        // But we update state here to keep it in sync
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
@@ -148,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Attempt to sign out from Supabase
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
@@ -156,8 +161,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setSession(null);
       setUser(null);
+
+      // Clear all app specific keys
       localStorage.removeItem('selectedCompanyId');
       localStorage.removeItem('selectedCompany');
+
+      // Force navigation to auth
       navigate('/auth', { replace: true });
     }
   };
