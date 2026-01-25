@@ -3,9 +3,17 @@ import { useCompany, Company } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-import { Building2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Building2, Check } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
-import { toTitleCase } from '@/lib/utils';
+import { toTitleCase, cn } from '@/lib/utils';
 
 export function CompanySelector() {
   const { selectedCompany, setSelectedCompany } = useCompany();
@@ -127,18 +135,75 @@ export function CompanySelector() {
     );
   }
 
-  // Render static display instead of dropdown
+  // Render static display with Click-to-Change for Admins
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-foreground">
-      <div className="w-8 h-8 rounded-md bg-sidebar-primary/10 flex items-center justify-center shrink-0">
-        <Building2 className="w-4 h-4 text-sidebar-primary" />
+    <>
+      <div
+        className={cn(
+          "flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-foreground transition-colors",
+          isAdmin && "cursor-pointer hover:bg-sidebar-accent/80 hover:border-sidebar-primary/30"
+        )}
+        onClick={() => isAdmin && setOpen(true)}
+      >
+        <div className="w-8 h-8 rounded-md bg-sidebar-primary/10 flex items-center justify-center shrink-0">
+          <Building2 className="w-4 h-4 text-sidebar-primary" />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs text-sidebar-foreground/60 truncate">{toTitleCase('Empresa')}</span>
+          <span className="text-sm font-semibold truncate" title={selectedCompany?.name || ''}>
+            {selectedCompany ? toTitleCase(selectedCompany.name) : toTitleCase('Selecione...')}
+          </span>
+        </div>
+        {isAdmin && (
+          <div className="ml-auto text-sidebar-foreground/40">
+            {/* Optional: Add a small icon to indicate interactiveness, e.g. Chevrons */}
+          </div>
+        )}
       </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-xs text-sidebar-foreground/60 truncate">{toTitleCase('Empresa')}</span>
-        <span className="text-sm font-semibold truncate" title={selectedCompany?.name || ''}>
-          {selectedCompany ? toTitleCase(selectedCompany.name) : toTitleCase('Selecione...')}
-        </span>
-      </div>
-    </div>
+
+      {isAdmin && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center text-xl">Trocar Empresa</DialogTitle>
+              <DialogDescription className="text-center">
+                Selecione a empresa que deseja gerenciar.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-4 max-h-[60vh] overflow-y-auto space-y-2 pr-2">
+              {companies.map((company) => (
+                <Button
+                  key={company.id}
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-between h-auto py-4 px-4 hover:border-primary hover:bg-primary/5 group transition-all",
+                    selectedCompany?.id === company.id && "border-primary bg-primary/5"
+                  )}
+                  onClick={() => {
+                    setSelectedCompany(company);
+                    setOpen(false);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Building2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold text-base">{toTitleCase(company.name)}</span>
+                    </div>
+                  </div>
+                  {selectedCompany?.id === company.id && (
+                    <Check className="w-5 h-5 text-primary" />
+                  )}
+                </Button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
