@@ -22,7 +22,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import PendingApproval from "./pages/PendingApproval";
 
-import { CompanySelectionModal } from "@/components/CompanySelectionModal";
+
 import { AppLayout } from "@/components/AppLayout";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -50,14 +50,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/pending-approval" replace />;
   }
 
-  // Se o usuário é Admin e não tem empresa selecionada, não renderiza o conteúdo (AppLayout)
-  // O CompanySelectionModal (que está fora das rotas) será exibido por cima
-  if (role === 'admin' && !selectedCompany) {
-    return (
-      <div className="min-h-screen bg-background" /> // Fundo vazio enquanto o modal é exibido
-    );
-  }
-
   return <>{children}</>;
 }
 
@@ -71,7 +63,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CompanyProvider>
-            <CompanySelectionModal />
+
             <Routes>
               {/* Public Routes */}
               <Route path="/auth" element={<Auth />} />
