@@ -166,6 +166,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('selectedCompanyId');
       localStorage.removeItem('selectedCompany');
 
+      // Clear session storage to reset admin session marker
+      sessionStorage.clear();
+
       // Force navigation to auth
       navigate('/auth', { replace: true });
     }

@@ -21,6 +21,25 @@ export function CompanySelector() {
   const { role, loading: roleLoading } = useUserRole();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Clear company selection for admins on mount if they just logged in
+  // This ensures the modal appears
+  useEffect(() => {
+    if (!user || roleLoading || hasInitialized) return;
+
+    if (role === 'admin' && selectedCompany) {
+      // Check if this is a fresh login by seeing if we have a session start marker
+      const sessionStart = sessionStorage.getItem('admin_session_started');
+      if (!sessionStart) {
+        console.log('Fresh admin login detected, clearing company selection');
+        setSelectedCompany(null);
+        sessionStorage.setItem('admin_session_started', 'true');
+      }
+    }
+
+    setHasInitialized(true);
+  }, [user, role, roleLoading]);
 
   useEffect(() => {
     // Wait for user, role to be loaded, and role to be non-null

@@ -25,6 +25,17 @@ export function CompanySelectionModal() {
     // Open if: User is logged in + Role is Admin + No company selected + Role is loaded
     const isOpen = !!user && !roleLoading && role === 'admin' && !selectedCompany;
 
+    // Debug logging
+    useEffect(() => {
+        console.log('CompanySelectionModal state:', {
+            user: !!user,
+            roleLoading,
+            role,
+            selectedCompany,
+            isOpen
+        });
+    }, [user, roleLoading, role, selectedCompany, isOpen]);
+
     useEffect(() => {
         if (!isOpen) return;
 
