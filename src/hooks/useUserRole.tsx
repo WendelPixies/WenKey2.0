@@ -2,18 +2,19 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserRole = 'admin' | 'manager' | 'user';
+// Update type definition if needed, or just let valid string literals allow null via state type
+export type UserRole = 'admin' | 'manager' | 'user' | null;
 
 export function useUserRole() {
   const { user, profile: authProfile } = useAuth();
-  const [role, setRole] = useState<UserRole>('user');
+  const [role, setRole] = useState<UserRole>(null); // Start with null to prevent premature defaults
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
     if (!user) {
-      setRole('user');
+      setRole(null);
       setLoading(false);
       return;
     }

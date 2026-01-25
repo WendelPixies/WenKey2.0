@@ -23,7 +23,8 @@ export function CompanySelector() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || roleLoading) return;
+    // Wait for user, role to be loaded, and role to be non-null
+    if (!user || roleLoading || !role) return;
 
     let mounted = true;
     const fetchCompanies = async () => {
