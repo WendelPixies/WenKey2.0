@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,6 +107,14 @@ export default function Auth() {
   useEffect(() => {
     document.title = 'Wenkey - Entrar ou Cadastrar';
   }, []);
+
+  const { user } = useAuth(); // Add this to hook usage
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (activeTab !== 'signin') {
