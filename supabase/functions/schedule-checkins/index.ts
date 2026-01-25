@@ -1,4 +1,4 @@
-/// <reference lib="deno.ns" />
+/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
 import { createClient } from '@supabase/supabase-js'
 import { JWT } from 'google-auth-library'
@@ -10,6 +10,24 @@ const corsHeaders = {
 
 interface RequestBody {
     quarter_id: string;
+}
+
+interface Profile {
+    email: string | null;
+    full_name: string | null;
+}
+
+interface Checkin {
+    id: string;
+    quarter_id: string;
+    checkin_date?: string;
+    occurred_at?: string;
+}
+
+interface Quarter {
+    id: string;
+    name: string;
+    company_id: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -49,6 +67,8 @@ Deno.serve(async (req: Request) => {
 
         if (quarterError || !quarter) throw new Error('Quarter not found');
 
+        const quarterData = quarter as Quarter;
+
         // 2. Get Check-ins for this Quarter
         const { data: checkins, error: checkinsError } = await supabaseClient
             .from('checkins')
@@ -62,22 +82,26 @@ Deno.serve(async (req: Request) => {
             )
         }
 
+        const checkinData = checkins as Checkin[];
+
         // 3. Get Company Users (Collaborators)
         const { data: users, error: usersError } = await supabaseClient
             .from('profiles')
             .select('email, full_name')
-            .eq('company_id', quarter.company_id)
+            .eq('company_id', quarterData.company_id)
             .eq('is_active', true);
 
         if (usersError || !users || users.length === 0) {
             throw new Error('No active users found for this company');
         }
 
-        const attendees = users
-            .filter(u => u.email) // Ensure email exists
-            .map(u => ({ email: u.email }));
+        const userData = users as Profile[];
 
-        console.log(`Found ${attendees.length} attendees for ${checkins.length} check-ins`);
+        const attendees = userData
+            .filter(u => u.email) // Ensure email exists
+            .map(u => ({ email: u.email! }));
+
+        console.log(`Found ${attendees.length} attendees for ${checkinData.length} check-ins`);
 
         // 4. Verify Google Credentials
         const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
@@ -88,8 +112,8 @@ Deno.serve(async (req: Request) => {
             return new Response(
                 JSON.stringify({
                     success: true,
-                    message: `Simulação: ${checkins.length} convites seriam enviados para ${attendees.length} colaboradores. (Configure GOOGLE_SERVICE_ACCOUNT para envio real)`,
-                    details: { checkins: checkins.length, users: attendees.length }
+                    message: `Simulação: ${checkinData.length} convites seriam enviados para ${attendees.length} colaboradores. (Configure GOOGLE_SERVICE_ACCOUNT para envio real)`,
+                    details: { checkins: checkinData.length, users: attendees.length }
                 }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
@@ -106,7 +130,7 @@ Deno.serve(async (req: Request) => {
         // 6. Create Calendar Events
         let createdCount = 0;
 
-        for (const checkin of checkins) {
+        for (const checkin of checkinData) {
             const dateValue = checkin.checkin_date || checkin.occurred_at;
             if (!dateValue) continue;
 
@@ -123,8 +147,8 @@ Deno.serve(async (req: Request) => {
             const endStr = endDate.toISOString().split('T')[0];
 
             const event = {
-                summary: `Check-in de OKR - ${quarter.name}`,
-                description: `Check-in programado para o quarter ${quarter.name}. Por favor, atualize seus resultados.`,
+                summary: `Check-in de OKR - ${quarterData.name}`,
+                description: `Check-in programado para o quarter ${quarterData.name}. Por favor, atualize seus resultados.`,
                 start: {
                     date: startStr,
                 },
