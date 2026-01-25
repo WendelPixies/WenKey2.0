@@ -85,9 +85,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initializeAuth = async () => {
+      // Safety timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn('Auth initialization timed out - forcing loading to false');
+          setLoading(false);
+        }
+      }, 15000);
+
       try {
         // Get limits from local storage if available to avoid loading state flicker
         const { data: { session }, error } = await supabase.auth.getSession();
+
+        clearTimeout(timeoutId);
 
         if (error) {
           console.error('Error initializing auth session:', error);
@@ -107,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Unexpected error during auth initialization:', error);
       } finally {
+        clearTimeout(timeoutId);
         if (mounted) {
           setLoading(false);
         }
