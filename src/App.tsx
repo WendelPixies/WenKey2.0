@@ -22,6 +22,7 @@ import ConfirmEmail from "./pages/ConfirmEmail";
 import PendingApproval from "./pages/PendingApproval";
 
 import { CompanySelectionModal } from "@/components/CompanySelectionModal";
+import { AppLayout } from "@/components/AppLayout";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
@@ -61,20 +62,29 @@ const App = () => (
           <CompanyProvider>
             <CompanySelectionModal />
             <Routes>
+              {/* Public Routes */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/confirm-email" element={<ConfirmEmail />} />
+
+              {/* Pending Approval (Standalone) */}
               <Route path="/pending-approval" element={<ProtectedRoute><PendingApproval /></ProtectedRoute>} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-              <Route path="/quarters" element={<ProtectedRoute><Quarters /></ProtectedRoute>} />
-              <Route path="/objectives" element={<ProtectedRoute><Objectives /></ProtectedRoute>} />
-              <Route path="/kr-checkins" element={<ProtectedRoute><KRCheckins /></ProtectedRoute>} />
-              <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
-              <Route path="/performance-history" element={<ProtectedRoute><PerformanceHistory /></ProtectedRoute>} />
-              <Route path="/prototypes" element={<ProtectedRoute><Prototypes /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+              {/* Protected Routes with Sidebar Layout */}
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/companies" element={<Companies />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/quarters" element={<Quarters />} />
+                <Route path="/objectives" element={<Objectives />} />
+                <Route path="/kr-checkins" element={<KRCheckins />} />
+                <Route path="/overview" element={<Overview />} />
+                <Route path="/performance-history" element={<PerformanceHistory />} />
+                <Route path="/prototypes" element={<Prototypes />} />
+                <Route path="/profile" element={<Profile />} />
+              </Route>
+
+              {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </CompanyProvider>
