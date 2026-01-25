@@ -51,7 +51,11 @@ export function CompanySelector() {
       try {
         let companyList: Company[] = [];
 
-        if (role === 'admin') {
+        // Calculate isAdmin HERE with current role value
+        const isAdmin = role === 'admin';
+        console.log('CompanySelector fetchCompanies - isAdmin:', isAdmin, 'role:', role);
+
+        if (isAdmin) {
           const { data, error } = await supabase
             .from('companies')
             .select('id, name')
@@ -88,18 +92,24 @@ export function CompanySelector() {
             if (currentInList) {
               // Update name if needed (or if it was "Carregando...")
               if (currentInList.name !== selectedCompany?.name) {
+                console.log('CompanySelector: Updating company name');
                 setSelectedCompany(currentInList);
               }
             } else {
               // If no selection, or selection not valid (e.g. inactive)
               // Only auto-select for non-admins. Admins must choose via the modal (or manual selection).
+              console.log('CompanySelector: No valid selection. isAdmin:', isAdmin, 'selectedCompany:', selectedCompany);
               if (!isAdmin) {
                 if (!selectedCompany) {
+                  console.log('CompanySelector: Auto-selecting first company for non-admin');
                   setSelectedCompany(companyList[0]);
                 } else {
                   // The current selection is NOT in the active list.
+                  console.log('CompanySelector: Current selection invalid, auto-selecting first company for non-admin');
                   setSelectedCompany(companyList[0]);
                 }
+              } else {
+                console.log('CompanySelector: Admin user - NOT auto-selecting');
               }
             }
           }
