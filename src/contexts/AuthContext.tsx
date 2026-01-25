@@ -157,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null);
       setUser(null);
       localStorage.removeItem('selectedCompanyId');
+      localStorage.removeItem('selectedCompany');
       navigate('/auth', { replace: true });
     }
   };

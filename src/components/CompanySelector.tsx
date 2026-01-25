@@ -63,16 +63,15 @@ export function CompanySelector() {
                 setSelectedCompany(currentInList);
               }
             } else {
-              // If no selection, or selection not valid (e.g. inactive), select first
-              if (!selectedCompany) {
-                setSelectedCompany(companyList[0]);
-              } else {
-                // The current selection is NOT in the active list.
-                // Ideally we reset, but IF the user sees "unloading", it's because this runs.
-                // We should only reset if we are sure it's invalid.
-                // If role is admin, list contains ALL active companies.
-                // So if it's not in list, it's invalid/inactive.
-                setSelectedCompany(companyList[0]);
+              // If no selection, or selection not valid (e.g. inactive)
+              // Only auto-select for non-admins. Admins must choose via the modal (or manual selection).
+              if (!isAdmin) {
+                if (!selectedCompany) {
+                  setSelectedCompany(companyList[0]);
+                } else {
+                  // The current selection is NOT in the active list.
+                  setSelectedCompany(companyList[0]);
+                }
               }
             }
           }

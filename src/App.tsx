@@ -21,6 +21,8 @@ import ResetPassword from "./pages/ResetPassword";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import PendingApproval from "./pages/PendingApproval";
 
+import { CompanySelectionModal } from "@/components/CompanySelectionModal";
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
   const location = useLocation();
@@ -57,6 +59,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CompanyProvider>
+            <CompanySelectionModal />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
