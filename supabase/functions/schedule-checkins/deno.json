@@ -6,7 +6,15 @@
     "compilerOptions": {
         "lib": [
             "deno.ns",
-            "deno.unstable"
-        ]
+            "deno.unstable",
+            "esnext"
+        ],
+        "strict": true,
+        "noImplicitAny": false,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictPropertyInitialization": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true
     }
 }

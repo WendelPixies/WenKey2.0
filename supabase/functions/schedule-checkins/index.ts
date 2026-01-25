@@ -1,4 +1,4 @@
-/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
+// @ts-types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts"
 
 import { createClient } from '@supabase/supabase-js'
 import { JWT } from 'google-auth-library'

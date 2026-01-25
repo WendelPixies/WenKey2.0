@@ -4,7 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { CompanyProvider } from "@/contexts/CompanyContext";
+import { CompanyProvider, useCompany } from "@/contexts/CompanyContext"; // Adicionado useCompany
+import { useUserRole } from "@/hooks/useUserRole"; // Adicionado
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Companies from "./pages/Companies";
@@ -26,9 +27,11 @@ import { AppLayout } from "@/components/AppLayout";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
+  const { role, loading: roleLoading } = useUserRole();
+  const { selectedCompany } = useCompany();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || (user && roleLoading)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -45,6 +48,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Permitimos acesso à página de pending-approval mesmo se inativo
   if (profile && !profile.is_active && location.pathname !== '/pending-approval') {
     return <Navigate to="/pending-approval" replace />;
+  }
+
+  // Se o usuário é Admin e não tem empresa selecionada, não renderiza o conteúdo (AppLayout)
+  // O CompanySelectionModal (que está fora das rotas) será exibido por cima
+  if (role === 'admin' && !selectedCompany) {
+    return (
+      <div className="min-h-screen bg-background" /> // Fundo vazio enquanto o modal é exibido
+    );
   }
 
   return <>{children}</>;

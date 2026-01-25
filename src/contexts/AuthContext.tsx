@@ -85,19 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initializeAuth = async () => {
-      // Safety timeout to prevent infinite loading
-      const timeoutId = setTimeout(() => {
-        if (mounted) {
-          console.warn('Auth initialization timed out - forcing loading to false');
-          setLoading(false);
-          // If we timed out, we might be offline or supabase is blocked.
-          // Don't necessarily log them out, but allow the UI to render (likely triggering ProtectedRoute redirect if user is null)
-        }
-      }, 10000); // Increased to 10s to avoid premature logouts on slow connections
-
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        clearTimeout(timeoutId);
+        // Get limits from local storage if available to avoid loading state flicker
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('Error initializing auth session:', error);
+          // Don't sign out immediately on error, retry logic could be added here
+          // But for now we just handle the lack of session
+        }
 
         if (!mounted) return;
 
@@ -109,9 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await fetchProfile(currentUser.id);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('Unexpected error during auth initialization:', error);
       } finally {
-        clearTimeout(timeoutId);
         if (mounted) {
           setLoading(false);
         }
@@ -120,9 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initializeAuth();
 
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
+
+        console.log('Auth state changed:', event);
 
         // If we are signing out, we handle it in the signOut function to ensure clean redirect
         // But we update state here to keep it in sync
@@ -144,9 +142,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Set up periodic session refresh to keep user logged in
+    // This prevents automatic logout due to token expiration
+    const refreshInterval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Refresh the session if it exists
+        await supabase.auth.refreshSession();
+        console.log('Session refreshed automatically');
+      }
+    }, 30 * 60 * 1000); // Refresh every 30 minutes
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearInterval(refreshInterval);
     };
   }, [navigate]);
 
