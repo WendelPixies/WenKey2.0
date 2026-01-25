@@ -376,7 +376,13 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!user || !selectedCompanyId) return;
+    if (!user) return;
+
+    if (!selectedCompanyId) {
+      setLoading(false);
+      setAppState(null);
+      return;
+    }
 
     let mounted = true;
 
@@ -571,7 +577,7 @@ export default function Dashboard() {
 
   const topThreeRankings = useMemo(() => userRankings.slice(0, 3), [userRankings]);
 
-  if (!user || !selectedCompanyId) {
+  if (!user) {
     return (
       <Layout>
         <div className="py-24 text-center text-muted-foreground">
@@ -592,11 +598,21 @@ export default function Dashboard() {
     );
   }
 
-  if (!appState || !appState.active_quarter) {
+  if (!selectedCompanyId || !appState || !appState.active_quarter) {
     return (
       <Layout>
-        <div className="py-24 text-center text-muted-foreground">
-          Não foi possível localizar quarters para esta empresa.
+        <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground gap-4">
+          {!selectedCompanyId ? (
+            <>
+              <Target className="w-12 h-12 text-muted-foreground/50" />
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-foreground">Nenhuma empresa selecionada</h3>
+                <p>Utilize o menu lateral ou o modal para selecionar uma empresa.</p>
+              </div>
+            </>
+          ) : (
+            <p>Não foi possível localizar quarters para esta empresa.</p>
+          )}
         </div>
       </Layout>
     );
