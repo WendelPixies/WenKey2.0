@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, retryCount = 0) => {
     try {
       // Tentamos buscar as colunas que temos certeza que existem
       const { data, error } = await supabase
@@ -42,6 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error);
+
+        // Retry logic for network errors or temporary glitches
+        if (retryCount < 3) {
+          console.log(`Retrying profile fetch (${retryCount + 1}/3)...`);
+          setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
+          return;
+        }
+
         setProfile(null);
         return;
       }
@@ -71,6 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
+      if (retryCount < 3) {
+        console.log(`Retrying profile fetch after unexpected error (${retryCount + 1}/3)...`);
+        setTimeout(() => fetchProfile(userId, retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
       setProfile(null);
     }
   };

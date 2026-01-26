@@ -195,7 +195,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
     );
 
-    async function loadProfile() {
+    async function loadProfile(retryCount = 0) {
         if (!user) return;
 
         let mounted = true;
@@ -209,6 +209,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             if (profileError) {
                 console.error('Layout: Error loading profile:', profileError);
+                if (retryCount < 3) {
+                    setTimeout(() => loadProfile(retryCount + 1), 1000 * (retryCount + 1));
+                    return;
+                }
             }
 
             if (profileData) {
@@ -237,6 +241,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             }
         } catch (err) {
             console.error('Layout: Unexpected error in loadProfile:', err);
+            if (retryCount < 3) {
+                setTimeout(() => loadProfile(retryCount + 1), 1000 * (retryCount + 1));
+            }
         }
     }
 }
