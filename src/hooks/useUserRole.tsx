@@ -14,7 +14,7 @@ export function useUserRole() {
     let mounted = true;
 
     if (!user) {
-      setRole(null);
+      setRole('user'); // Default to 'user' to unblock UI if auth state is messy
       setLoading(false);
       return;
     }
@@ -31,6 +31,7 @@ export function useUserRole() {
       const timeoutId = setTimeout(() => {
         if (mounted) {
           console.warn('useUserRole: fetchRole timed out');
+          setRole(prev => prev || 'user'); // Fallback to user if timed out
           setLoading(false);
         }
       }, 3000);

@@ -33,8 +33,6 @@ export function CompanySelector() {
       setLoading(true);
       try {
         let companyList: Company[] = [];
-
-        // Calculate isAdmin HERE with current role value
         const isAdmin = role === 'admin';
 
         if (isAdmin) {
@@ -64,40 +62,22 @@ export function CompanySelector() {
         if (mounted) {
           setCompanies(companyList);
 
-          // Logic to validate/update selection
+          // Simplified Auto-Selection Logic (Restored from Jan 24 stability style)
           if (companyList.length > 0) {
-            // Check if current selection is valid
             const currentInList = selectedCompany
               ? companyList.find(c => c.id === selectedCompany.id)
               : null;
 
             if (currentInList) {
-              // Update name if needed (or if it was "Carregando...")
+              // Ensure name is up to date
               if (currentInList.name !== selectedCompany?.name) {
-                console.log('CompanySelector: Updating company name');
                 setSelectedCompany(currentInList);
               }
             } else {
-              // No valid selection, need to auto-select
-              console.log('CompanySelector: Checking auto-selection. isAdmin:', isAdmin);
-
-              let targetCompany = null;
-
-              // 1. Try to select the user's home company (from profile)
-              // Handle case where profile might still be loading
-              if (profile?.company_id) {
-                targetCompany = companyList.find(c => c.id === profile.company_id);
-              }
-
-              // 2. Fallback to first available company if home company not found or no home company
-              if (!targetCompany) {
-                targetCompany = companyList[0];
-              }
-
-              if (targetCompany) {
-                console.log('CompanySelector: Auto-selecting company:', targetCompany.name);
-                setSelectedCompany(targetCompany);
-              }
+              // Fallback: Always auto-select the first company if none is selected
+              // This ensures Admins never see an empty screen.
+              console.log('CompanySelector: Auto-selecting first available company');
+              setSelectedCompany(companyList[0]);
             }
           }
         }
@@ -110,7 +90,7 @@ export function CompanySelector() {
 
     fetchCompanies();
     return () => { mounted = false; };
-  }, [user, profile, role, roleLoading]); // Added profile to dependencies
+  }, [user, role, roleLoading]); // Removed profile dependency
 
   const isAdmin = role === 'admin';
   const showSelector = isAdmin;
