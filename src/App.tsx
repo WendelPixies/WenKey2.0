@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext"; // Adicionado useCompany
-import { useUserRole } from "@/hooks/useUserRole"; // Adicionado
+
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Companies from "./pages/Companies";
@@ -27,11 +27,10 @@ import { AppLayout } from "@/components/AppLayout";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole();
   const { selectedCompany } = useCompany();
   const location = useLocation();
 
-  if (loading || (user && roleLoading)) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
