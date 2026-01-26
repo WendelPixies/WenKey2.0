@@ -17,7 +17,7 @@ import { toTitleCase, cn } from '@/lib/utils';
 
 export function CompanySelector() {
   const { selectedCompany, setSelectedCompany } = useCompany();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { role, loading: roleLoading } = useUserRole();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,8 +25,8 @@ export function CompanySelector() {
 
 
   useEffect(() => {
-    // Wait for user, role to be loaded, and role to be non-null
-    if (!user || roleLoading || !role) return;
+    // Wait for user, profile and role to be loaded
+    if (!user || !profile || roleLoading || !role) return;
 
     let mounted = true;
     const fetchCompanies = async () => {
@@ -78,19 +78,24 @@ export function CompanySelector() {
                 setSelectedCompany(currentInList);
               }
             } else {
-              // If no selection, or selection not valid (e.g. inactive)
-              // Only auto-select for non-admins. Admins must choose via the modal (or manual selection).
-              console.log('CompanySelector: No valid selection. isAdmin:', isAdmin, 'selectedCompany:', selectedCompany);
-              // Auto-select for everyone (Admins and Users) if no valid selection exists/persists
-              console.log('CompanySelector: Checking auto-selection. isAdmin:', isAdmin, 'selectedCompany:', selectedCompany);
+              // No valid selection, need to auto-select
+              console.log('CompanySelector: Checking auto-selection. isAdmin:', isAdmin);
 
-              if (!selectedCompany) {
-                console.log('CompanySelector: Auto-selecting first company');
-                setSelectedCompany(companyList[0]);
-              } else {
-                // The current selection is NOT in the active list.
-                console.log('CompanySelector: Current selection invalid, auto-selecting first company');
-                setSelectedCompany(companyList[0]);
+              let targetCompany = null;
+
+              // 1. Try to select the user's home company (from profile)
+              if (profile.company_id) {
+                targetCompany = companyList.find(c => c.id === profile.company_id);
+              }
+
+              // 2. Fallback to first available company if home company not found or no home company
+              if (!targetCompany) {
+                targetCompany = companyList[0];
+              }
+
+              if (targetCompany) {
+                console.log('CompanySelector: Auto-selecting company:', targetCompany.name);
+                setSelectedCompany(targetCompany);
               }
             }
           }
@@ -104,7 +109,7 @@ export function CompanySelector() {
 
     fetchCompanies();
     return () => { mounted = false; };
-  }, [user, role, roleLoading]); // Remove selectedCompany from dependency to avoid loop
+  }, [user, profile, role, roleLoading]); // Added profile to dependencies
 
   const isAdmin = role === 'admin';
   const showSelector = isAdmin;
