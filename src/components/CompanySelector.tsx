@@ -81,17 +81,16 @@ export function CompanySelector() {
               // If no selection, or selection not valid (e.g. inactive)
               // Only auto-select for non-admins. Admins must choose via the modal (or manual selection).
               console.log('CompanySelector: No valid selection. isAdmin:', isAdmin, 'selectedCompany:', selectedCompany);
-              if (!isAdmin) {
-                if (!selectedCompany) {
-                  console.log('CompanySelector: Auto-selecting first company for non-admin');
-                  setSelectedCompany(companyList[0]);
-                } else {
-                  // The current selection is NOT in the active list.
-                  console.log('CompanySelector: Current selection invalid, auto-selecting first company for non-admin');
-                  setSelectedCompany(companyList[0]);
-                }
+              // Auto-select for everyone (Admins and Users) if no valid selection exists/persists
+              console.log('CompanySelector: Checking auto-selection. isAdmin:', isAdmin, 'selectedCompany:', selectedCompany);
+
+              if (!selectedCompany) {
+                console.log('CompanySelector: Auto-selecting first company');
+                setSelectedCompany(companyList[0]);
               } else {
-                console.log('CompanySelector: Admin user - NOT auto-selecting');
+                // The current selection is NOT in the active list.
+                console.log('CompanySelector: Current selection invalid, auto-selecting first company');
+                setSelectedCompany(companyList[0]);
               }
             }
           }
