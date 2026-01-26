@@ -36,12 +36,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (selectedCompany) {
       localStorage.setItem('selectedCompany', JSON.stringify(selectedCompany));
-      // Keep legacy ID for compatibility if other components use it directly (optional but safer)
+      // Keep legacy ID for compatibility
       localStorage.setItem('selectedCompanyId', selectedCompany.id);
-    } else {
-      localStorage.removeItem('selectedCompany');
-      localStorage.removeItem('selectedCompanyId');
     }
+    // We strictly DO NOT clear localStorage here if selectedCompany is null,
+    // to prevent accidental data loss during state transitions or mounting.
+    // Clearing storage is handled explicitly by the signOut function in AuthContext.
   }, [selectedCompany]);
 
   return (
