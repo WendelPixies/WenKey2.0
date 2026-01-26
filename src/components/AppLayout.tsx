@@ -201,7 +201,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         let mounted = true;
         const timeoutId = setTimeout(() => {
             console.warn('Layout: loadProfile timed out');
-        }, 3000);
+        }, 10000);
 
         try {
             const { data: profileData, error: profileError } = await supabase
