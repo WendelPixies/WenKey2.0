@@ -25,8 +25,8 @@ export function CompanySelector() {
 
 
   useEffect(() => {
-    // Wait for user, profile and role to be loaded
-    if (!user || !profile || roleLoading || !role) return;
+    // Wait for user and role to be loaded
+    if (!user || roleLoading || !role) return;
 
     let mounted = true;
     const fetchCompanies = async () => {
@@ -84,7 +84,8 @@ export function CompanySelector() {
               let targetCompany = null;
 
               // 1. Try to select the user's home company (from profile)
-              if (profile.company_id) {
+              // Handle case where profile might still be loading
+              if (profile?.company_id) {
                 targetCompany = companyList.find(c => c.id === profile.company_id);
               }
 
