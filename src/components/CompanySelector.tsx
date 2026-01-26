@@ -36,7 +36,6 @@ export function CompanySelector() {
 
         // Calculate isAdmin HERE with current role value
         const isAdmin = role === 'admin';
-        console.log('CompanySelector fetchCompanies - isAdmin:', isAdmin, 'role:', role);
 
         if (isAdmin) {
           const { data, error } = await supabase
@@ -55,7 +54,7 @@ export function CompanySelector() {
 
           if (error) throw error;
 
-          companyList = data
+          companyList = (data || [])
             .map((item: any) => item.companies)
             .filter((c: any) => c && c.is_active) as Company[];
 
