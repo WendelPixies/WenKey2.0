@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useCompany, Company } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,11 +21,12 @@ export function CompanySelector() {
   const { role, loading: roleLoading } = useUserRole();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  // Removed legacy popup logic that cleared selection
+  const [open, setOpen] = useState(false);
 
+  // Strict lock to prevent any loops
+  const hasAutoSelected = useRef(false);
 
   useEffect(() => {
-    // Wait for user and role to be loaded
     if (!user || roleLoading || !role) return;
 
     let mounted = true;
@@ -61,25 +62,6 @@ export function CompanySelector() {
 
         if (mounted) {
           setCompanies(companyList);
-
-          // Simplified Auto-Selection Logic (Restored from Jan 24 stability style)
-          if (companyList.length > 0) {
-            const currentInList = selectedCompany
-              ? companyList.find(c => c.id === selectedCompany.id)
-              : null;
-
-            if (currentInList) {
-              // Ensure name is up to date
-              if (currentInList.name !== selectedCompany?.name) {
-                setSelectedCompany(currentInList);
-              }
-            } else {
-              // Fallback: Always auto-select the first company if none is selected
-              // This ensures Admins never see an empty screen.
-              console.log('CompanySelector: Auto-selecting first available company');
-              setSelectedCompany(companyList[0]);
-            }
-          }
         }
       } catch (error) {
         console.error('Error fetching companies:', error);
@@ -90,12 +72,41 @@ export function CompanySelector() {
 
     fetchCompanies();
     return () => { mounted = false; };
-  }, [user, role, roleLoading]); // Removed profile dependency
+  }, [user, role, roleLoading]);
+
+  // SIMPLIFIED Auto-selection - runs ONCE only
+  useEffect(() => {
+    // Absolute guard: if we've already tried, NEVER run again
+    if (hasAutoSelected.current) return;
+
+    // Only proceed if we have companies and no selection
+    if (companies.length === 0 || selectedCompany) return;
+
+    // Find target company
+    let targetCompany: Company | undefined;
+
+    // Priority 1: User's registered company
+    if (profile?.company_id) {
+      targetCompany = companies.find(c => c.id === profile.company_id);
+    }
+
+    // Priority 2: First available
+    if (!targetCompany) {
+      targetCompany = companies[0];
+    }
+
+    // Set and lock
+    if (targetCompany) {
+      console.log('[CompanySelector] Auto-selecting:', targetCompany.name);
+      setSelectedCompany(targetCompany);
+      hasAutoSelected.current = true;
+    }
+  }, [companies, selectedCompany, profile, setSelectedCompany]);
 
   const isAdmin = role === 'admin';
   const showSelector = isAdmin;
 
-  // Only show loading state if we DON'T have a selected company to show
+  // Loading state
   if ((loading || roleLoading) && !selectedCompany) {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
@@ -107,6 +118,7 @@ export function CompanySelector() {
     );
   }
 
+  // Non-admin view
   if (!showSelector) {
     return (
       <div className="flex items-center gap-3 p-3 rounded-lg bg-sidebar-accent border border-sidebar-border text-sidebar-foreground">
@@ -121,6 +133,7 @@ export function CompanySelector() {
     );
   }
 
+  // No companies available
   if (companies.length === 0 && !loading && isAdmin) {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-sidebar-accent">
@@ -132,9 +145,7 @@ export function CompanySelector() {
     );
   }
 
-  // Render static display with Click-to-Change for Admins
-  const [open, setOpen] = useState(false);
-
+  // Admin selector
   return (
     <>
       <div
@@ -155,7 +166,7 @@ export function CompanySelector() {
         </div>
         {isAdmin && (
           <div className="ml-auto text-sidebar-foreground/40">
-            {/* Optional: Add a small icon to indicate interactiveness, e.g. Chevrons */}
+            {/* Optional icon */}
           </div>
         )}
       </div>
