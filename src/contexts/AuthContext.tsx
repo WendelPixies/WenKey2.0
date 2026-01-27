@@ -99,12 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       // Safety timeout to prevent infinite loading
+      // Increased to 30s to account for tab switching delays
       const timeoutId = setTimeout(() => {
         if (mounted) {
           console.warn('Auth initialization timed out - forcing loading to false');
           setLoading(false);
         }
-      }, 15000);
+      }, 30000);
 
       try {
         // Get limits from local storage if available to avoid loading state flicker
