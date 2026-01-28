@@ -8,8 +8,16 @@ RUN npm install
 
 COPY . .
 
-# Ensure .env is available or arguments are passed. 
-# For this setup, we assume .env is successfully copied if it exists in the context.
+# Accept environment variables as build arguments
+# These are required for Vite to inject them into the build
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+
+# Verify that required environment variables are set
+RUN if [ -z "$VITE_SUPABASE_URL" ]; then echo "ERROR: VITE_SUPABASE_URL is not set" && exit 1; fi
+RUN if [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then echo "ERROR: VITE_SUPABASE_PUBLISHABLE_KEY is not set" && exit 1; fi
+
+# Build the application with environment variables
 RUN npm run build
 
 # Serve stage

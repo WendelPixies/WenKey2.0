@@ -98,41 +98,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initializeAuth = async () => {
+      console.log('🔐 Starting auth initialization...');
+
       // Safety timeout to prevent infinite loading
       // Increased to 30s to account for tab switching delays
       const timeoutId = setTimeout(() => {
         if (mounted) {
-          console.warn('Auth initialization timed out - forcing loading to false');
+          console.warn('⏱️ Auth initialization timed out - forcing loading to false');
+          console.warn('This usually means getSession() is taking too long or variables are missing');
           setLoading(false);
         }
       }, 30000);
 
       try {
+        // Log environment check (without exposing sensitive data)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const hasKey = !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+        console.log('📍 Supabase URL configured:', !!supabaseUrl);
+        console.log('🔑 Supabase Key configured:', hasKey);
+
+        if (!supabaseUrl || !hasKey) {
+          console.error('❌ CRITICAL: Supabase environment variables are missing!');
+          console.error('Make sure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set');
+          clearTimeout(timeoutId);
+          setLoading(false);
+          return;
+        }
+
+        console.log('🔄 Calling supabase.auth.getSession()...');
+        const startTime = Date.now();
+
         // Get limits from local storage if available to avoid loading state flicker
         const { data: { session }, error } = await supabase.auth.getSession();
+
+        const duration = Date.now() - startTime;
+        console.log(`✅ getSession() completed in ${duration}ms`);
 
         clearTimeout(timeoutId);
 
         if (error) {
-          console.error('Error initializing auth session:', error);
+          console.error('❌ Error initializing auth session:', error);
+          console.error('Error details:', { message: error.message, status: error.status });
           // Don't sign out immediately on error, retry logic could be added here
           // But for now we just handle the lack of session
         }
 
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('⚠️ Component unmounted, skipping state updates');
+          return;
+        }
 
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
+          console.log('👤 User found, fetching profile...');
           await fetchProfile(currentUser.id);
+        } else {
+          console.log('👤 No user session found');
         }
       } catch (error) {
-        console.error('Unexpected error during auth initialization:', error);
+        console.error('💥 Unexpected error during auth initialization:', error);
       } finally {
         clearTimeout(timeoutId);
         if (mounted) {
+          console.log('✅ Auth initialization complete, setting loading to false');
           setLoading(false);
         }
       }
