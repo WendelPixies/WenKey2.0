@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronDown, ChevronUp, Pencil, Target, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CreateObjectiveDialog } from '@/components/CreateObjectiveDialog';
@@ -89,6 +90,7 @@ interface KeyResultWithProgress extends KeyResult {
 
 export default function Objectives() {
   const { user } = useAuth();
+  const { selectedCompanyId } = useCompany();
   const { isAdmin, isUser } = useUserRole();
   const { toast } = useToast();
 
@@ -114,6 +116,20 @@ export default function Objectives() {
       loadInitialData();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    if (selectedCompanyId && filterCompanyId !== selectedCompanyId) {
+      setFilterCompanyId(selectedCompanyId);
+      setSelectedQuarterId('');
+      setFilterUserId('');
+    } else if (!selectedCompanyId && filterCompanyId) {
+      setFilterCompanyId('');
+      setSelectedQuarterId('');
+      setFilterUserId('');
+    }
+  }, [selectedCompanyId, filterCompanyId, isAdmin]);
 
   useEffect(() => {
     if (filterCompanyId) {

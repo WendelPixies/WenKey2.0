@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { useAuth } from './AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Company {
   id: string;
@@ -15,6 +17,7 @@ interface CompanyContextType {
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(() => {
     try {
       const saved = localStorage.getItem('selectedCompany');
@@ -32,6 +35,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     }
     return null;
   });
+  const autoSelectLock = useRef<{ userId: string | null; applied: boolean }>({
+    userId: null,
+    applied: false,
+  });
 
   useEffect(() => {
     if (selectedCompany) {
@@ -43,6 +50,48 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     // to prevent accidental data loss during state transitions or mounting.
     // Clearing storage is handled explicitly by the signOut function in AuthContext.
   }, [selectedCompany]);
+
+  // Auto-select the company the user is registered to (default) once per user session
+  useEffect(() => {
+    const userId = profile?.id ?? null;
+    const targetCompanyId = profile?.company_id ?? null;
+
+    // Reset guard when user changes
+    if (autoSelectLock.current.userId !== userId) {
+      autoSelectLock.current = { userId, applied: false };
+    }
+
+    if (!userId || !targetCompanyId) return;
+
+    const alreadySelected = selectedCompany?.id === targetCompanyId;
+    if (alreadySelected || autoSelectLock.current.applied) return;
+
+    const fetchAndSelect = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('id, name, is_active')
+          .eq('id', targetCompanyId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setSelectedCompany({
+            id: data.id,
+            name: data.name,
+            is_active: data.is_active,
+          });
+        }
+      } catch (err) {
+        console.error('Error auto-selecting company for user:', err);
+      } finally {
+        autoSelectLock.current.applied = true;
+      }
+    };
+
+    fetchAndSelect();
+  }, [profile?.id, profile?.company_id, selectedCompany]);
 
   return (
     <CompanyContext.Provider value={{

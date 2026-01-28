@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { CircularProgress } from '@/components/CircularProgress';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Trophy } from 'lucide-react';
 
@@ -30,6 +31,7 @@ interface UserRanking {
 
 export default function Overview() {
   const { user } = useAuth();
+  const { selectedCompanyId } = useCompany();
   const { role, isAdmin, loading: roleLoading } = useUserRole();
   const [quarters, setQuarters] = useState<Quarter[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -50,6 +52,20 @@ export default function Overview() {
       loadRankings();
     }
   }, [selectedCompany, selectedQuarter]);
+
+  useEffect(() => {
+    if (roleLoading) return;
+
+    if (selectedCompanyId && selectedCompany !== selectedCompanyId) {
+      setSelectedCompany(selectedCompanyId);
+      loadQuarters(selectedCompanyId);
+    } else if (!selectedCompanyId && selectedCompany) {
+      setSelectedCompany('');
+      setSelectedQuarter('');
+      setQuarters([]);
+      setRankings([]);
+    }
+  }, [selectedCompanyId, selectedCompany, roleLoading]);
 
   const initializePage = async () => {
     try {

@@ -42,6 +42,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { toTitleCase } from '@/lib/utils';
@@ -73,6 +74,7 @@ interface CompanyMember {
 
 export default function Users() {
   const { user, profile } = useAuth();
+  const { selectedCompanyId } = useCompany();
   const { isAdmin } = useUserRole();
   const [users, setUsers] = useState<Profile[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -98,6 +100,16 @@ export default function Users() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    if (selectedCompanyId && filterCompanyId !== selectedCompanyId) {
+      setFilterCompanyId(selectedCompanyId);
+    } else if (!selectedCompanyId && filterCompanyId !== 'all') {
+      setFilterCompanyId('all');
+    }
+  }, [selectedCompanyId, isAdmin, filterCompanyId]);
 
   const loadData = async () => {
     try {

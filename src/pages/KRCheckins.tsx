@@ -15,6 +15,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toTitleCase } from '@/lib/utils';
+import { calculateDeadlineProgress } from '@/lib/deadlineProgress';
 
 interface Quarter {
   id: string;
@@ -109,6 +110,18 @@ export default function KRCheckins() {
   const [selectedCheckinDate, setSelectedCheckinDate] = useState<string | null>(null);
   const [currentResult, setCurrentResult] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+
+  useEffect(() => {
+    if (roleLoading || role !== 'admin') return;
+
+    if (selectedCompanyId && filterCompanyId !== selectedCompanyId) {
+      setFilterCompanyId(selectedCompanyId);
+      setFilterOwnerId('all');
+    } else if (!selectedCompanyId && filterCompanyId !== 'all') {
+      setFilterCompanyId('all');
+      setFilterOwnerId('all');
+    }
+  }, [selectedCompanyId, role, roleLoading, filterCompanyId]);
 
   // Carregar perfil do usuário
   useEffect(() => {
@@ -502,6 +515,24 @@ export default function KRCheckins() {
     return v;
   };
 
+  const parseDateInputToMs = (val: string): number | null => {
+    if (!val) return null;
+    const parts = val.split('-').map((p) => Number(p));
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
+
+  const parseValueForType = (raw: string, type: string | null): number | null => {
+    if (!raw) return null;
+    if (type === 'date' || type === 'data') {
+      return parseDateInputToMs(raw);
+    }
+    const num = parseFloat(parseInputValue(raw));
+    return Number.isNaN(num) ? null : num;
+  };
+
   // Live mask for Brazilian Real currency (e.g., "R$ 10.000.000,00")
   const formatCurrencyInputLive = (raw: string) => {
     if (!raw) return '';
@@ -628,12 +659,13 @@ export default function KRCheckins() {
     // - aumento (maior � melhor): realizado / meta (limitado a 100%)
     // - redu��o (menor � melhor): meta / realizado (limitado a 100%; se realizado <= meta, conta 100%)
     const percentualAtingido = calculateKR(
-      isNaN(realizado) ? 0 : realizado,
+      isNaN(realizado) ? null : realizado,
       isNaN(minimo) ? null : minimo,
       isNaN(meta) ? null : meta,
-      kr.direction
+      kr.direction,
+      kr.type
     );
-    const roundedPercentual = Math.round(percentualAtingido);
+    const roundedPercentual = percentualAtingido === null ? null : Number(percentualAtingido.toFixed(2));
 
     const key = `${currentKR.id}-${currentCheckin.id}`;
     const existingResult = checkinResults[key];
@@ -801,52 +833,27 @@ export default function KRCheckins() {
   };
 
   const calculateKR = (
-    realized: number,
+    realized: number | null,
     min: number | null,
     target: number | null,
     direction: string | null,
     type?: string | null
-  ) => {
+  ): number | null => {
     // Basic safety
-    if (target === null || target === undefined) return 0;
+    if (target === null || target === undefined || Number.isNaN(Number(target))) return null;
 
     const safeTarget = Number(target);
-    const safeRealized = Number(realized);
+    const safeRealized = (realized === null || realized === undefined || Number.isNaN(Number(realized))) ? null : Number(realized);
     const safeMin = (min !== null && min !== undefined) ? Number(min) : null;
 
     // Lógica específica para DATAS
     if (type === 'date' || type === 'data') {
-      // Se não tem realizado, 0%
-      if (!realized) return 0;
-
-      // D_o = Data Alvo (Meta)
-      // D_1 = Data Limite / Tolerância (Mínimo Orçamento usado como limite tolerável)
-      // D_r = Data Realizada
-
-      const Do = safeTarget;
-      const Dr = safeRealized;
-      // Se safeMin não for definido, assumimos que tolerância = meta (sem tolerância extra)
-      const D1 = safeMin !== null ? safeMin : safeTarget;
-
-      // Se a data realizada for anterior ou igual à data alvo (entregou antes ou no prazo)
-      if (Dr <= Do) return 100;
-
-      // Se a data realizada for posterior à data limite tolerável (estourou o prazo máximo)
-      if (Dr > D1) return 0;
-
-      // Se está entre a meta e a tolerância: cálculo linear decrescente
-      // Dias de atraso = Dr - Do
-      // Dias de tolerância = D1 - Do
-
-      const oneDay = 24 * 60 * 60 * 1000;
-      const daysDelay = (Dr - Do) / oneDay;
-      const daysTolerance = (D1 - Do) / oneDay;
-
-      if (daysTolerance <= 0) return 0; // Evita divisão por zero se D1 <= Do
-
-      const score = 100 * (1 - (daysDelay / daysTolerance));
-      return Math.max(0, Math.min(100, score));
+      if (safeRealized === null) return null;
+      const limit = safeMin !== null ? safeMin : safeTarget;
+      return calculateDeadlineProgress(safeTarget, limit, safeRealized);
     }
+
+    if (safeRealized === null) return null;
 
     // Logic for "Increase" / "Maior é melhor" (Default)
     if (!direction || direction === 'increase' || direction === 'maior-é-melhor') {
@@ -887,12 +894,8 @@ export default function KRCheckins() {
     return 0;
   };
 
-  const calculateAttainment = (realized: number, target: number, direction: string | null, type?: string | null, min?: number | null) => {
-    if (target === null || target === undefined) return 0;
-    return calculateKR(realized, min || null, target, direction, type);
-  };
-
-  const updateStoredProgress = async (kr: KeyResult, newPercent: number) => {
+  const updateStoredProgress = async (kr: KeyResult, newPercent: number | null) => {
+    if (newPercent === null || Number.isNaN(newPercent)) return;
     try {
       await supabase
         .from('key_results')
@@ -1068,10 +1071,12 @@ export default function KRCheckins() {
           kr.type
         );
 
-        const weight = typeof kr.weight === 'number' && !Number.isNaN(kr.weight) ? kr.weight : 1;
-        weightedSum += krPercentage * weight;
-        totalWeight += weight;
-        count++;
+        if (krPercentage !== null) {
+          const weight = typeof kr.weight === 'number' && !Number.isNaN(kr.weight) ? kr.weight : 1;
+          weightedSum += krPercentage * weight;
+          totalWeight += weight;
+          count++;
+        }
       }
     });
 
@@ -1500,47 +1505,48 @@ export default function KRCheckins() {
                                         <p className="font-medium">{formatValue(result.minimo_orcamento, kr.type, kr.unit)}</p>
                                       </div>
 
-                                      {result.valor_realizado !== null && result.meta_checkin !== null && result.minimo_orcamento !== null && (
-                                        <>
-                                          <div className="flex justify-between items-center">
-                                            <span className="text-muted-foreground">REALIZADO:</span>
-                                            <div className="text-right">
-                                              <div className="font-bold">{formatValue(result.valor_realizado, kr.type, kr.unit)}</div>
-                                              <div className="text-[10px] font-semibold text-[#0d3a8c]">
-                                                <span>Atingimento:</span>
-                                                <span className="ml-1">{calculateAttainment(result.valor_realizado, result.meta_checkin, kr.direction, kr.type, result.minimo_orcamento).toFixed(2)}%</span>
+                                      {(() => {
+                                        const krProgress = calculateKR(
+                                          result.valor_realizado,
+                                          result.minimo_orcamento,
+                                          result.meta_checkin,
+                                          kr.direction,
+                                          kr.type
+                                        );
+                                        const attainmentText = krProgress !== null ? `${krProgress.toFixed(2)}%` : '--';
+                                        const progressValue = krProgress ?? 0;
+                                        const progressColor = krProgress !== null ? getProgressColor(krProgress) : '#e5e7eb';
+
+                                        return (
+                                          <>
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-muted-foreground">REALIZADO:</span>
+                                              <div className="text-right">
+                                                <div className="font-bold">{formatValue(result.valor_realizado, kr.type, kr.unit)}</div>
+                                                <div className="text-[10px] font-semibold text-[#0d3a8c]">
+                                                  <span>Atingimento:</span>
+                                                  <span className="ml-1">{attainmentText}</span>
+                                                </div>
                                               </div>
                                             </div>
-                                          </div>
-                                          <div className="space-y-1">
-                                            <Progress
-                                              value={calculateKR(
-                                                result.valor_realizado,
-                                                result.minimo_orcamento,
-                                                result.meta_checkin,
-                                                kr.direction,
-                                                kr.type
-                                              )}
-                                              className="h-2"
-                                              style={{
-                                                ['--progress-color' as any]: getProgressColor(calculateKR(
-                                                  result.valor_realizado,
-                                                  result.minimo_orcamento,
-                                                  result.meta_checkin,
-                                                  kr.direction,
-                                                  kr.type
-                                                ))
-                                              }}
-                                            />
-                                            <div className="flex justify-between items-center text-[10px]">
-                                              <span className="text-muted-foreground">KR:</span>
-                                              <span className="font-semibold text-primary text-sm">
-                                                {calculateKR(result.valor_realizado, result.minimo_orcamento, result.meta_checkin, kr.direction, kr.type).toFixed(2)}%
-                                              </span>
+                                            <div className="space-y-1">
+                                              <Progress
+                                                value={progressValue}
+                                                className="h-2"
+                                                style={{
+                                                  ['--progress-color' as any]: progressColor
+                                                }}
+                                              />
+                                              <div className="flex justify-between items-center text-[10px]">
+                                                <span className="text-muted-foreground">KR:</span>
+                                                <span className="font-semibold text-primary text-sm">
+                                                  {attainmentText}
+                                                </span>
+                                              </div>
                                             </div>
-                                          </div>
-                                        </>
-                                      )}
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                   ) : (
                                     <Button size="sm" variant="outline" className="w-full">
@@ -1604,7 +1610,7 @@ export default function KRCheckins() {
                       <div className="flex justify-between items-center">
                         <Label>META:</Label>
                         <span className="text-lg font-bold">
-                          {formatValue(parseFloat(parseInputValue(formData.meta)) || 0, currentKR.type, currentKR.unit)}
+                          {formatValue(parseValueForType(formData.meta, currentKR.type), currentKR.type, currentKR.unit)}
                         </span>
                       </div>
                       {currentKR.type === 'date' || currentKR.type === 'data' ? (
@@ -1644,7 +1650,7 @@ export default function KRCheckins() {
                       <div className="flex justify-between items-center">
                         <Label>MIN. ORÇAM:</Label>
                         <span className="text-lg font-bold">
-                          {formatValue(parseFloat(parseInputValue(formData.minimo)) || 0, currentKR.type, currentKR.unit)}
+                          {formatValue(parseValueForType(formData.minimo, currentKR.type), currentKR.type, currentKR.unit)}
                         </span>
                       </div>
                       {currentKR.type === 'date' || currentKR.type === 'data' ? (
@@ -1682,91 +1688,85 @@ export default function KRCheckins() {
                   </div>
 
                   {formData.meta && formData.minimo && (
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <Label>REALIZADO:</Label>
-                        <div className="text-right">
-                          <div className="text-lg font-bold">
-                            {formatValue(parseFloat(parseInputValue(formData.realizado)) || 0, currentKR.type, currentKR.unit)}
-                          </div>
-                          {formData.realizado && formData.meta && (
-                            <div className="text-sm space-y-1">
-                              <div className="font-semibold text-[#0d3a8c]">
-                                <span>Atingimento:</span>
-                                <span className="ml-1">{calculateAttainment(parseFloat(parseInputValue(formData.realizado)) || 0, parseFloat(parseInputValue(formData.meta)) || 0, currentKR.direction, currentKR.type, parseFloat(parseInputValue(formData.minimo)) || 0).toFixed(2)}%</span>
+                    (() => {
+                      const realizedVal = parseValueForType(formData.realizado, currentKR.type);
+                      const minVal = parseValueForType(formData.minimo, currentKR.type);
+                      const metaVal = parseValueForType(formData.meta, currentKR.type);
+                      const progress = formData.realizado
+                        ? calculateKR(realizedVal, minVal, metaVal, currentKR.direction, currentKR.type)
+                        : null;
+                      const progressText = progress !== null ? `${progress.toFixed(2)}%` : '--';
+                      const progressValue = progress ?? 0;
+                      const progressColor = progress !== null ? getProgressColor(progress) : '#e5e7eb';
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <Label>REALIZADO:</Label>
+                            <div className="text-right">
+                              <div className="text-lg font-bold">
+                                {formatValue(formData.realizado ? realizedVal : null, currentKR.type, currentKR.unit)}
                               </div>
-                              <div className="font-semibold text-primary text-sm">
-                                KR: {calculateKR(
-                                  parseFloat(parseInputValue(formData.realizado)) || 0,
-                                  parseFloat(parseInputValue(formData.minimo)) || 0,
-                                  parseFloat(parseInputValue(formData.meta)) || 0,
-                                  currentKR.direction,
-                                  currentKR.type
-                                ).toFixed(2)}%
-                              </div>
+                              {formData.realizado && (
+                                <div className="text-sm space-y-1">
+                                  <div className="font-semibold text-[#0d3a8c]">
+                                    <span>Atingimento:</span>
+                                    <span className="ml-1">{progressText}</span>
+                                  </div>
+                                  <div className="font-semibold text-primary text-sm">
+                                    KR: {progressText}
+                                  </div>
+                                </div>
+                              )}
                             </div>
+                          </div>
+                          <Progress
+                            value={progressValue}
+                            className="h-3"
+                            style={{ ['--progress-color' as any]: progressColor }}
+                          />
+                          {currentKR.type === 'date' || currentKR.type === 'data' ? (
+                            <Input
+                              type="date"
+                              value={formData.realizado}
+                              onChange={(e) => setFormData({ ...formData, realizado: e.target.value })}
+                              className="mt-2 text-right"
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              placeholder={
+                                currentKR.type === 'moeda' || currentKR.type === 'currency'
+                                  ? 'Ex: R$ 1.000,00'
+                                  : currentKR.type === 'percentual' || currentKR.type === 'percentage'
+                                    ? 'Ex: 75%'
+                                    : 'Ex: 1000'
+                              }
+                              value={formData.realizado}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                let formatted = v;
+                                if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
+                                  formatted = formatCurrencyInputLive(v);
+                                } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
+                                  formatted = formatPercentageInputLive(v);
+                                } else {
+                                  formatted = formatNumberInputLive(v);
+                                }
+                                setFormData({ ...formData, realizado: formatted });
+                              }}
+                              onBlur={() =>
+                                setFormData({
+                                  ...formData,
+                                  realizado: formatInputValue(formData.realizado, currentKR.type),
+                                })
+                              }
+                              className="mt-2 text-right"
+                            />
                           )}
                         </div>
-                      </div>
-                      <Progress
-                        value={formData.realizado ? calculateKR(
-                          parseFloat(parseInputValue(formData.realizado)) || 0,
-                          parseFloat(parseInputValue(formData.minimo)) || 0,
-                          parseFloat(parseInputValue(formData.meta)) || 0,
-                          currentKR.direction,
-                          currentKR.type
-                        ) : 0}
-                        className="h-3"
-                        style={{
-                          ['--progress-color' as any]: getProgressColor(formData.realizado ? calculateKR(
-                            parseFloat(parseInputValue(formData.realizado)) || 0,
-                            parseFloat(parseInputValue(formData.minimo)) || 0,
-                            parseFloat(parseInputValue(formData.meta)) || 0,
-                            currentKR.direction,
-                            currentKR.type
-                          ) : 0)
-                        }}
-                      />
-                      {currentKR.type === 'date' || currentKR.type === 'data' ? (
-                        <Input
-                          type="date"
-                          value={formData.realizado}
-                          onChange={(e) => setFormData({ ...formData, realizado: e.target.value })}
-                          className="mt-2 text-right"
-                        />
-                      ) : (
-                        <Input
-                          type="text"
-                          placeholder={
-                            currentKR.type === 'moeda' || currentKR.type === 'currency'
-                              ? 'Ex: R$ 1.000,00'
-                              : currentKR.type === 'percentual' || currentKR.type === 'percentage'
-                                ? 'Ex: 75%'
-                                : 'Ex: 1000'
-                          }
-                          value={formData.realizado}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            let formatted = v;
-                            if (currentKR.type === 'moeda' || currentKR.type === 'currency') {
-                              formatted = formatCurrencyInputLive(v);
-                            } else if (currentKR.type === 'percentual' || currentKR.type === 'percentage') {
-                              formatted = formatPercentageInputLive(v);
-                            } else {
-                              formatted = formatNumberInputLive(v);
-                            }
-                            setFormData({ ...formData, realizado: formatted });
-                          }}
-                          onBlur={() =>
-                            setFormData({
-                              ...formData,
-                              realizado: formatInputValue(formData.realizado, currentKR.type),
-                            })
-                          }
-                          className="mt-2 text-right"
-                        />
-                      )}
-                    </div>
+                      );
+                    })()
                   )}
                 </div>
 
