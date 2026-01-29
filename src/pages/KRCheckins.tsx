@@ -153,7 +153,7 @@ export default function KRCheckins() {
 
     if (error) {
       toast({
-        title: 'Erro ao carregar perfil',
+        title: 'Error loading profile',
         description: error.message,
         variant: 'destructive',
       });
@@ -237,7 +237,7 @@ export default function KRCheckins() {
 
     if (error) {
       toast({
-        title: 'Erro ao carregar empresas',
+        title: 'Error loading companies',
         description: error.message,
         variant: 'destructive',
       });
@@ -259,7 +259,7 @@ export default function KRCheckins() {
 
     if (error) {
       toast({
-        title: 'Erro ao carregar usuários',
+        title: 'Error loading users',
         description: error.message,
         variant: 'destructive',
       });
@@ -279,7 +279,7 @@ export default function KRCheckins() {
 
     if (error) {
       toast({
-        title: 'Erro ao carregar trimestres',
+        title: 'Error loading quarters',
         description: error.message,
         variant: 'destructive',
       });
@@ -305,7 +305,7 @@ export default function KRCheckins() {
 
     if (error) {
       toast({
-        title: 'Erro ao carregar checkins',
+        title: 'Error loading check-ins',
         description: error.message,
         variant: 'destructive',
       });
@@ -348,7 +348,7 @@ export default function KRCheckins() {
 
     if (objError) {
       toast({
-        title: 'Erro ao carregar objetivos',
+        title: 'Error loading objectives',
         description: objError.message,
         variant: 'destructive',
       });
@@ -367,7 +367,7 @@ export default function KRCheckins() {
 
       if (krError) {
         toast({
-          title: 'Erro ao carregar key results',
+          title: 'Error loading key results',
           description: krError.message,
           variant: 'destructive',
         });
@@ -427,7 +427,7 @@ export default function KRCheckins() {
 
     if (error) {
       toast({
-        title: 'Erro ao carregar valores',
+        title: 'Error loading values',
         description: error.message,
         variant: 'destructive',
       });
@@ -603,17 +603,17 @@ export default function KRCheckins() {
       e.stopPropagation();
     }
 
-    console.log('handleSaveCheckin iniciado');
+    console.log('handleSaveCheckin started');
     if (!currentKR || !currentCheckin) {
-      console.log('currentKR ou currentCheckin não definidos', { currentKR, currentCheckin });
+      console.log('currentKR or currentCheckin not defined', { currentKR, currentCheckin });
       return;
     }
 
     if (!selectedCompanyId) {
-      console.log('selectedCompanyId não definido');
+      console.log('selectedCompanyId not set');
       toast({
-        title: 'Erro',
-        description: 'Empresa não selecionada',
+        title: 'Error',
+        description: 'Company not selected',
         variant: 'destructive',
       });
       return;
@@ -642,12 +642,12 @@ export default function KRCheckins() {
       realizado = parseFloat(parseInputValue(formData.realizado));
     }
 
-    console.log('Valores parseados:', { meta, minimo, realizado });
+    console.log('Parsed values:', { meta, minimo, realizado });
 
     if (isNaN(meta) || isNaN(minimo)) {
       toast({
-        title: 'Erro',
-        description: 'Meta e Mínimo Orçamento são obrigatórios',
+        title: 'Error',
+        description: 'Target and Minimum Budget are required',
         variant: 'destructive',
       });
       return;
@@ -675,14 +675,14 @@ export default function KRCheckins() {
         // Atualizar
         if (!user?.id) {
           toast({
-            title: 'Erro',
-            description: 'Usuário não autenticado',
+            title: 'Error',
+            description: 'User not authenticated',
             variant: 'destructive',
           });
-          throw new Error('Usuário não autenticado');
+          throw new Error('User not authenticated');
         }
 
-        console.log('Atualizando registro existente:', existingResult.id);
+        console.log('Updating existing record:', existingResult.id);
         const { error: updateError, data: updatedRows } = await supabase
           .from('checkin_results')
           .update({
@@ -697,32 +697,32 @@ export default function KRCheckins() {
           .select();
 
         if (updateError) {
-          console.error('Erro ao atualizar:', updateError);
+          console.error('Error updating:', updateError);
           throw updateError;
         }
-        if (!updatedRows || updatedRows.length === 0) {
-          console.warn('Nenhuma linha atualizada (possível bloqueio por RLS)');
-          throw new Error(
-            canEditAnyCheckin
-              ? 'Não foi possível atualizar este check-in. Verifique se ele ainda existe.'
-              : 'Você não tem permissão para atualizar este check-in'
-          );
-        }
-        console.log('Atualização bem-sucedida');
+          if (!updatedRows || updatedRows.length === 0) {
+            console.warn('No rows updated (possible RLS block)');
+            throw new Error(
+              canEditAnyCheckin
+              ? 'Could not update this check-in. Please check if it still exists.'
+              : 'You do not have permission to update this check-in'
+            );
+          }
+        console.log('Update successful');
       } else {
         // Criar
         if (!user?.id) {
           toast({
             title: "Erro",
-            description: "Usuário não autenticado",
+            description: "User not authenticated",
             variant: "destructive",
           });
-          throw new Error("Usuário não autenticado");
+          throw new Error("User not authenticated");
         }
 
         const responsibleUserId = currentKR.user_id || user.id;
         if (!responsibleUserId) {
-          throw new Error('Não foi possível identificar o responsável pelo check-in.');
+          throw new Error('Could not identify the owner of this check-in.');
         }
 
         const insertData = {
@@ -744,27 +744,27 @@ export default function KRCheckins() {
           .select();
 
         if (error) {
-          console.error('Erro ao inserir:', error);
+          console.error('Error inserting:', error);
           throw error;
         }
-        console.log('Inserção bem-sucedida:', data);
+        console.log('Insert successful:', data);
       }
 
       await updateStoredProgress(kr, roundedPercentual);
-      // Recarregar os dados para refletir as mudanças
+      // Reload data to reflect changes
       await loadCheckinResults();
 
       toast({
-        title: 'Sucesso',
-        description: 'Dados salvos com sucesso',
+        title: 'Success',
+        description: 'Data saved successfully',
       });
 
       closeDialog();
     } catch (error: any) {
-      console.error('Erro no catch:', error);
+      console.error('Error in catch:', error);
       toast({
-        title: 'Erro ao salvar',
-        description: error.message || 'Erro desconhecido',
+        title: 'Error saving data',
+        description: error.message || 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -806,14 +806,14 @@ export default function KRCheckins() {
     switch (type) {
       case 'currency':
       case 'moeda':
-        return 'moeda';
+        return 'Currency';
       case 'percentual':
-        return 'percentual';
+        return 'Percentage';
       case 'numero':
-        return 'número';
+        return 'Number';
       case 'date':
       case 'data':
-        return 'data';
+        return 'Date';
       default:
         return type || '--';
     }
@@ -822,11 +822,11 @@ export default function KRCheckins() {
   const translateDirection = (direction: string | null) => {
     switch (direction) {
       case 'increase':
-        return 'crescente';
+        return 'Increase';
       case 'decrease':
-        return 'decrescente';
+        return 'Decrease';
       case 'maintain':
-        return 'manter';
+        return 'Maintain';
       default:
         return direction || '--';
     }
@@ -960,7 +960,7 @@ export default function KRCheckins() {
         }
       }
     } catch (error) {
-      console.error('Erro ao sincronizar percentuais de objetivo/KR:', error);
+      console.error('Error syncing objective/KR percentages:', error);
     }
   };
 
@@ -1214,7 +1214,7 @@ export default function KRCheckins() {
           .maybeSingle();
 
         if (error) {
-          console.error('Erro ao carregar resultado do quarter:', error);
+          console.error('Error loading quarter result:', error);
           return;
         }
 
@@ -1236,7 +1236,7 @@ export default function KRCheckins() {
           });
         }
       } catch (error) {
-        console.error('Erro ao salvar resultado do quarter:', error);
+        console.error('Error saving quarter result:', error);
       }
     };
 
@@ -1306,7 +1306,7 @@ export default function KRCheckins() {
           })
         );
       } catch (error) {
-        console.error('Erro ao salvar resultado do check-in:', error);
+        console.error('Error saving check-in result:', error);
       }
     };
 
@@ -1317,14 +1317,14 @@ export default function KRCheckins() {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{toTitleCase('Check-ins de Key Results')}</h1>
+          <h1 className="text-3xl font-bold">{toTitleCase('Key Result Check-ins')}</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* PRIMEIRO: Filtro de Empresa */}
+          {/* FIRST: Company filter */}
           {role === 'admin' && (
             <div>
-              <Label htmlFor="company">{toTitleCase('Empresa')}</Label>
+              <Label htmlFor="company">{toTitleCase('Company')}</Label>
               <Select
                 value={filterCompanyId || 'all'}
                 onValueChange={(value) => {
@@ -1333,10 +1333,10 @@ export default function KRCheckins() {
                 }}
               >
                 <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={toTitleCase('Selecione uma empresa')} />
+                  <SelectValue placeholder={toTitleCase('Select a company')} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">Todas as empresas</SelectItem>
+                  <SelectItem value="all">All companies</SelectItem>
                   {companies
                     .filter((company) => company.id)
                     .map((company) => (
@@ -1349,12 +1349,12 @@ export default function KRCheckins() {
             </div>
           )}
 
-          {/* SEGUNDO: Filtro de Quarter */}
+          {/* SECOND: Quarter filter */}
           <div>
             <Label htmlFor="quarter">{toTitleCase('Quarter')}</Label>
             <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
               <SelectTrigger className="bg-background">
-                <SelectValue placeholder={toTitleCase('Selecione o quarter')} />
+                <SelectValue placeholder={toTitleCase('Select a quarter')} />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
                 {quarters.map((quarter) => (
@@ -1366,20 +1366,20 @@ export default function KRCheckins() {
             </Select>
           </div>
 
-          {/* TERCEIRO: Filtro de Usuário */}
+          {/* THIRD: User filter */}
           {role === 'admin' && (
             <div>
-              <Label htmlFor="user">{toTitleCase('Usuário')}</Label>
+              <Label htmlFor="user">{toTitleCase('User')}</Label>
               <Select
                 value={filterOwnerId || 'all'}
                 onValueChange={setFilterOwnerId}
                 disabled={!filterCompanyId || filterCompanyId === 'all'}
               >
                 <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={toTitleCase('Todos os usuários')} />
+                  <SelectValue placeholder={toTitleCase('All users')} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">Todos os usuários</SelectItem>
+                  <SelectItem value="all">All users</SelectItem>
                   {users
                     .filter((user) => user.id)
                     .map((user) => (
@@ -1398,7 +1398,7 @@ export default function KRCheckins() {
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">RESULTADO ATUAL</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">CURRENT RESULT</p>
                   <p className="text-4xl font-bold text-primary">{currentResult}%</p>
                 </div>
                 <Progress
@@ -1419,7 +1419,7 @@ export default function KRCheckins() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[60px] sticky left-0 bg-background z-10 text-primary font-semibold px-2">
-                        {toTitleCase('Código')}
+                        {toTitleCase('Code')}
                       </TableHead>
                       <TableHead className="w-[200px] sticky left-[60px] bg-background z-10 px-3">
                         {toTitleCase('Key Result')}
@@ -1437,7 +1437,7 @@ export default function KRCheckins() {
                             {formatDate(checkin.checkin_date)}
                           </div>
                           {selectedCheckinDate === checkin.id && (
-                            <div className="text-xs text-primary mt-1">Selecionada</div>
+                            <div className="text-xs text-primary mt-1">Selected</div>
                           )}
                         </TableHead>
                       ))}
@@ -1479,7 +1479,7 @@ export default function KRCheckins() {
                               <div className="flex flex-col justify-center min-h-[140px]">
                                 <div className="text-sm font-medium uppercase whitespace-normal">{toTitleCase(kr.title)}</div>
                                 <div className="text-xs text-muted-foreground mt-1 uppercase whitespace-nowrap">
-                                  Tipo: {translateType(kr.type)} • Direção: {translateDirection(kr.direction)}
+                                  Type: {translateType(kr.type)} • Direction: {translateDirection(kr.direction)}
                                 </div>
                               </div>
                             </TableCell>
@@ -1496,12 +1496,12 @@ export default function KRCheckins() {
                                   {result ? (
                                     <div className="space-y-2">
                                       <div>
-                                        <p className="text-xs text-muted-foreground">META:</p>
+                                        <p className="text-xs text-muted-foreground">TARGET:</p>
                                         <p className="font-medium">{formatValue(result.meta_checkin, kr.type, kr.unit)}</p>
                                       </div>
 
                                       <div>
-                                        <p className="text-xs text-muted-foreground">MIN. ORÇAM:</p>
+                                        <p className="text-xs text-muted-foreground">MIN. BUDGET:</p>
                                         <p className="font-medium">{formatValue(result.minimo_orcamento, kr.type, kr.unit)}</p>
                                       </div>
 
@@ -1520,11 +1520,11 @@ export default function KRCheckins() {
                                         return (
                                           <>
                                             <div className="flex justify-between items-center">
-                                              <span className="text-muted-foreground">REALIZADO:</span>
+                                              <span className="text-muted-foreground">ACTUAL:</span>
                                               <div className="text-right">
                                                 <div className="font-bold">{formatValue(result.valor_realizado, kr.type, kr.unit)}</div>
                                                 <div className="text-[10px] font-semibold text-[#0d3a8c]">
-                                                  <span>Atingimento:</span>
+                                                  <span>Attainment:</span>
                                                   <span className="ml-1">{attainmentText}</span>
                                                 </div>
                                               </div>
@@ -1550,7 +1550,7 @@ export default function KRCheckins() {
                                     </div>
                                   ) : (
                                     <Button size="sm" variant="outline" className="w-full">
-                                      Cadastrar Meta
+                                      Add Target
                                     </Button>
                                   )}
                                 </TableCell>
@@ -1571,8 +1571,8 @@ export default function KRCheckins() {
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
               {quarterCheckins.length === 0
-                ? 'Nenhum check-in cadastrado para este trimestre'
-                : 'Nenhum objetivo cadastrado para este trimestre'}
+                ? 'No check-ins registered for this quarter'
+                : 'No objectives registered for this quarter'}
             </CardContent>
           </Card>
         )}
@@ -1587,7 +1587,7 @@ export default function KRCheckins() {
             onInteractOutside={(e) => e.preventDefault()}
           >
             <DialogHeader>
-              <DialogTitle>Cadastrar Meta do Check-in</DialogTitle>
+              <DialogTitle>Add Check-in Target</DialogTitle>
             </DialogHeader>
 
             {currentKR && currentCheckin && (
@@ -1600,7 +1600,7 @@ export default function KRCheckins() {
                     <span className="font-semibold">Check-in:</span> {formatDate(currentCheckin.checkin_date)}
                   </div>
                   <div className="text-sm">
-                    <span className="font-semibold">Tipo:</span> {translateType(currentKR.type)}
+                    <span className="font-semibold">Type:</span> {translateType(currentKR.type)}
                   </div>
                 </div>
 
@@ -1608,7 +1608,7 @@ export default function KRCheckins() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <Label>META:</Label>
+                        <Label>TARGET:</Label>
                         <span className="text-lg font-bold">
                           {formatValue(parseValueForType(formData.meta, currentKR.type), currentKR.type, currentKR.unit)}
                         </span>
@@ -1623,7 +1623,7 @@ export default function KRCheckins() {
                       ) : (
                         <Input
                           type="text"
-                          placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'Ex: R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'Ex: 85%' : 'Ex: 100'}
+                          placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'e.g., R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'e.g., 85%' : 'e.g., 100'}
                           value={formData.meta}
                           onChange={(e) => {
                             const v = e.target.value;
@@ -1648,7 +1648,7 @@ export default function KRCheckins() {
 
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <Label>MIN. ORÇAM:</Label>
+                        <Label>MIN. BUDGET:</Label>
                         <span className="text-lg font-bold">
                           {formatValue(parseValueForType(formData.minimo, currentKR.type), currentKR.type, currentKR.unit)}
                         </span>
@@ -1663,7 +1663,7 @@ export default function KRCheckins() {
                       ) : (
                         <Input
                           type="text"
-                          placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'Ex: R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'Ex: 50%' : 'Ex: 50'}
+                          placeholder={currentKR.type === 'moeda' || currentKR.type === 'currency' ? 'e.g., R$ 1.000,00' : currentKR.type === 'percentual' || currentKR.type === 'percentage' ? 'e.g., 50%' : 'e.g., 50'}
                           value={formData.minimo}
                           onChange={(e) => {
                             const v = e.target.value;
@@ -1702,7 +1702,7 @@ export default function KRCheckins() {
                       return (
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <Label>REALIZADO:</Label>
+                            <Label>ACTUAL:</Label>
                             <div className="text-right">
                               <div className="text-lg font-bold">
                                 {formatValue(formData.realizado ? realizedVal : null, currentKR.type, currentKR.unit)}
@@ -1710,7 +1710,7 @@ export default function KRCheckins() {
                               {formData.realizado && (
                                 <div className="text-sm space-y-1">
                                   <div className="font-semibold text-[#0d3a8c]">
-                                    <span>Atingimento:</span>
+                                    <span>Attainment:</span>
                                     <span className="ml-1">{progressText}</span>
                                   </div>
                                   <div className="font-semibold text-primary text-sm">
@@ -1737,10 +1737,10 @@ export default function KRCheckins() {
                               type="text"
                               placeholder={
                                 currentKR.type === 'moeda' || currentKR.type === 'currency'
-                                  ? 'Ex: R$ 1.000,00'
+                                  ? 'e.g., R$ 1.000,00'
                                   : currentKR.type === 'percentual' || currentKR.type === 'percentage'
-                                    ? 'Ex: 75%'
-                                    : 'Ex: 1000'
+                                    ? 'e.g., 75%'
+                                    : 'e.g., 1000'
                               }
                               value={formData.realizado}
                               onChange={(e) => {
@@ -1771,10 +1771,10 @@ export default function KRCheckins() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações</Label>
+                  <Label htmlFor="observacoes">Notes</Label>
                   <textarea
                     id="observacoes"
-                    placeholder="Digite suas observações sobre este check-in..."
+                    placeholder="Enter your notes about this check-in..."
                     value={formData.observacoes}
                     onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1792,7 +1792,7 @@ export default function KRCheckins() {
                     }}
                     className="flex-1"
                   >
-                    Salvar
+                    Save
                   </Button>
                   <Button
                     type="button"
@@ -1804,7 +1804,7 @@ export default function KRCheckins() {
                     variant="outline"
                     className="flex-1"
                   >
-                    Cancelar
+                    Cancel
                   </Button>
                 </div>
               </div>
