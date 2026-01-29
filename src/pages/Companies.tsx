@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Building2, Edit, Users as UsersIcon, MapPin } from 'lucide-react';
+import { Plus, Building2, Edit, Users as UsersIcon, MapPin, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toTitleCase } from '@/lib/utils';
@@ -33,6 +33,7 @@ export default function Companies() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     cnpj: '',
@@ -80,6 +81,9 @@ export default function Companies() {
     }
   }, [user]);
 
+  const isUniqueViolation = (error: any) =>
+    error?.code === '23505' || error?.message?.includes('companies_cnpj_key');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -125,7 +129,11 @@ export default function Companies() {
       });
       fetchCompanies();
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar empresa');
+      if (isUniqueViolation(error)) {
+        toast.error('Empresa já existe com este CNPJ');
+      } else {
+        toast.error(error.message || 'Erro ao criar empresa');
+      }
     }
   };
 
@@ -166,7 +174,11 @@ export default function Companies() {
       });
       fetchCompanies();
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao atualizar empresa');
+      if (isUniqueViolation(error)) {
+        toast.error('Empresa já existe com este CNPJ');
+      } else {
+        toast.error(error.message || 'Erro ao atualizar empresa');
+      }
     }
   };
 
@@ -182,6 +194,23 @@ export default function Companies() {
       sectors: company.sectors.join(', '),
     });
     setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = async (company: Company) => {
+    if (!isAdmin) return;
+    const confirmed = window.confirm(`Excluir a empresa "${company.name}"?`);
+    if (!confirmed) return;
+    try {
+      setDeletingId(company.id);
+      const { error } = await supabase.from('companies').delete().eq('id', company.id);
+      if (error) throw error;
+      toast.success('Empresa excluída com sucesso');
+      fetchCompanies();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir empresa');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -285,11 +314,11 @@ export default function Companies() {
             <Card key={company.id} className="hover:shadow-md transition-shadow duration-200">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Building2 className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="space-y-1">
                       <CardTitle className="text-base font-semibold leading-none">{toTitleCase(company.name)}</CardTitle>
                       {company.cnpj && (
                         <CardDescription className="text-xs font-mono">{company.cnpj}</CardDescription>
@@ -298,14 +327,27 @@ export default function Companies() {
                   </div>
                   <div className="flex items-center gap-1">
                     {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => openEditDialog(company)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditDialog(company)}
+                          title="Editar empresa"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(company)}
+                          title="Excluir empresa"
+                          disabled={deletingId === company.id}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                     <Badge
                       variant={company.is_active ? 'default' : 'secondary'}
